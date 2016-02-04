@@ -180,7 +180,6 @@ public class Piece {
 
 				// switch pawn to queen once across board
 				if (ofType(Game.PieceType.PAWN) && (dest.y == ((moveSet.dir>0)?7:0))){
-					System.out.println("trying pawn at "+location);
 					kill();
 					Piece newQueen = new Piece(game, team, Game.PieceType.QUEEN, color, moveSet.dir, dest);
 					team.addToPieceSet(newQueen);

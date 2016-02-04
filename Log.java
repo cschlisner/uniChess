@@ -255,8 +255,8 @@ public class Log {
 	private BufferedImage createBoardImage(){
 	    try{
 
-		    String[] boardTextLines = getLastBuffer().split("\n");
-		    removeLastBuffer();
+			String[] boardTextLines = getLastBuffer().split("\n");
+			removeLastBuffer();
 
 
 			int boardFontHeight = boardFontMetrics.getHeight();
@@ -264,36 +264,36 @@ public class Log {
 
 			BufferedImage bufferedImage = new BufferedImage(boardFontAdvFull+4, (boardFontHeight*11), BufferedImage.TYPE_INT_RGB);
 
-		    Graphics2D g = bufferedImage.createGraphics();
+			Graphics2D g = bufferedImage.createGraphics();
 			// Background
 			g.setColor(new Color(238,238,238));
 			g.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
 
-		    // Text color
-		    g.setColor(new Color(34, 49, 63));
-		    g.setFont(boardFont);
-		    int i = 0;
-		    for (String line : boardTextLines){
-		    	g.drawString(line, 2, (++i*boardFontHeight));
-		    }
+			// Text color
+			g.setColor(new Color(34, 49, 63));
+			g.setFont(boardFont);
+			int i = 0;
+			for (String line : boardTextLines){
+				g.drawString(line, 2, (++i*boardFontHeight));
+			}
 
-		    // Turn Colors light | dark
-		    Color light = new Color(189,195,199);
-		    Color dark = new Color(34, 49, 63);
+			// Turn Colors light | dark
+			Color light = new Color(189,195,199);
+			Color dark = new Color(34, 49, 63);
 
-		    g.setColor((game.isCurrentPlayer(game.player2)?dark:light));
+			g.setColor((game.isCurrentPlayer(game.player2)?dark:light));
 			g.fillRect(0, (i*boardFontHeight)+10, bufferedImage.getWidth(), bufferedImage.getHeight());
-			
+
 			g.setColor((game.isCurrentPlayer(game.player2)?light:dark));
 			//boardFont = new Font(defaultFont, Font.PLAIN, 22);
 			g.setFont(textFont);
-			
+
 			String nombre = game.getCurrentPlayer().toString();
 			int halfNombre = (nombre.length()/2);
 			g.drawString(nombre, (bufferedImage.getWidth()/2)-(g.getFontMetrics(textFont).stringWidth(nombre.substring(halfNombre))), (i*boardFontHeight)+35);
-		    g.dispose();
-	    	
-	    	return bufferedImage;
+			g.dispose();
+
+			return bufferedImage;
         } catch(Exception e){
             e.printStackTrace();
         }

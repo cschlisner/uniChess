@@ -3,13 +3,13 @@ package uniChess;
 import java.util.List;
 import java.util.ArrayList;
 public class Team {
-	private Game game;
-	private Board board;
+    private Game game;
+    private Board board;
     private Game.Color color;
 
 
     private List<Piece> pieceSet = new ArrayList<Piece>();
-    
+
     private boolean checked = false;
     private boolean checkMated = false;
     private List<Location> checkedMoves = new ArrayList<Location>();
@@ -23,28 +23,28 @@ public class Team {
      * 
      */
     public Team(Game g, Game.Color c){
-    	game = g;
-    	board = g.getBoard();
+        game = g;
+        board = g.getBoard();
         color = c;
-        
+
         int d = (c.equals(Game.Color.BLACK))?-1:1;
         Location org = (d>0)?new Location(0,0):new Location(7,7);
-        
+
         addToPieceSet(new Piece(g, this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*0), org.y)));
-		addToPieceSet(new Piece(g, this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*7), org.y)));
+        addToPieceSet(new Piece(g, this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*7), org.y)));
 
-		addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*1), org.y)));
-		addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*6), org.y)));
-		
-		addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*2), org.y)));
-		addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*5), org.y)));
+        addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*1), org.y)));
+        addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*6), org.y)));
 
-		// King and queen are symmetrical
-		addToPieceSet(new Piece(g, this, Game.PieceType.KING, c, d, new Location(org.x+(d*((d>0)?4:3)), org.y)));
-		addToPieceSet(new Piece(g, this, Game.PieceType.QUEEN, c, d, new Location(org.x+(d*((d>0)?3:4)), org.y)));
-		
-		for (int i = 0; i < 8; ++i)
-			addToPieceSet(new Piece(g, this, Game.PieceType.PAWN, c, d, new Location(i, ((d>0)?org.y+1:org.y-1))));
+        addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*2), org.y)));
+        addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*5), org.y)));
+
+        // King and queen are symmetrical
+        addToPieceSet(new Piece(g, this, Game.PieceType.KING, c, d, new Location(org.x+(d*((d>0)?4:3)), org.y)));
+        addToPieceSet(new Piece(g, this, Game.PieceType.QUEEN, c, d, new Location(org.x+(d*((d>0)?3:4)), org.y)));
+
+        for (int i = 0; i < 8; ++i)
+            addToPieceSet(new Piece(g, this, Game.PieceType.PAWN, c, d, new Location(i, ((d>0)?org.y+1:org.y-1))));
     }
 
     public void addToPieceSet(Piece p){
@@ -130,8 +130,8 @@ public class Team {
             for (Piece p : pieceSet){
                 moveloop:
                 for (Location move : p.getMoveList()){
-        			if (p.ofType(Game.PieceType.KING)){
-        				moves.add(move);
+                    if (p.ofType(Game.PieceType.KING)){
+                        moves.add(move);
                         continue moveloop;
                     }
                    for (Piece a : attackers)
