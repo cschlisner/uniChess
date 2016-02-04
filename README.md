@@ -127,7 +127,7 @@ Autosave can be set ON or OFF by calling `myGame.gameLog.setAutosave(true)` or `
 
 You can also set the save directory with `myGame.gameLog.setSaveDir("/new/directory")`.
 
-Games can be saved at any time by calling `myGame.gameLog.saveGame()`. This will save the current game as a .chess file with the game ID (which is randomly generated at Game construction) as the filename, in the save directory. Games are saved in JSON format.
+Games can be saved at any time by calling `myGame.gameLog.saveGame()`. This will save the current game as a .chess file with the game ID (which is randomly generated at Game construction) as the filename, in the save directory. Games are saved in JSON format, so it's pretty easy to automate games / cheat if you want. 
 
 
 Use the path of a saved game to reload a saved game using the Game constructor: `Game(String gameFile)` to create a new Game object.
