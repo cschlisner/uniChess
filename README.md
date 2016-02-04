@@ -70,7 +70,7 @@ ___
 
 ### Complete Example
 
-This is a working example of a complete console based chessGame:
+This is a working example of a complete console based Chess Game:
 
 ```java
 import uniChess.*;
