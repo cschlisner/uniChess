@@ -53,7 +53,10 @@ ___
 
 ###Reading output
 
-Read information output from the game by calling <b>`myGame.getInfoOutput()`</b> which will return a `String` object containing all game information not read from the buffer. Once this is called the buffer is cleared. 
+Read information output from the game by calling <b>`myGame.getInfoOutput()`</b> which will return a `String` object containing all game information not previously read from the buffer. Once this is called the buffer is cleared. 
+
+
+The `Board` and `Player` objects of the `Game` object are public, so you can always access any information about the board, teams, or pieces externally and use them however you like. The output buffer will just automatically give you useful information about game events and output.
 
 ___
 
@@ -107,7 +110,7 @@ ___
 
 ### Saving Games
 
-By default, autosave is ON - that means when your application exits (for whatever reason) the current game will be saved automatically in the directory that is specified in <b>Log.java<b>. 
+By default, autosave is ON - that means when your application exits (for whatever reason) the current game will be saved automatically in the directory that is specified in <b>Log.java</b>. 
 
 Autosave can be set ON or OFF by calling `myGame.gameLog.setAutosave(true)` or `myGame.gameLog.setAutosave(false)` respectively.
 
