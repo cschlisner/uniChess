@@ -3,6 +3,8 @@ package uniChess;
 import org.json.*;
 import java.util.Random;
 import java.util.List;
+import java.awt.image.*;
+
 
 public class Game {
 	public static Log gameLog;
@@ -16,63 +18,58 @@ public class Game {
 
 	private static boolean whiteTurn = true;
 	private static boolean dead = false; 
-	private static boolean imageOutput;
 	
 	private static int turnCount = 0, drawOfferTurn = -1;
 	
-	public static String defaultFileOut = "currBoard.png";
 	private static String gameId;
 
-	public Game(String p1Name, String p2Name, boolean imageOut){
+	public Game(String p1Name, String p2Name){
+		this(p1Name, p2Name, false, null);
+	}
+	
+	public Game(String p1Name, String p2Name, boolean imageOut, String imageFileOut){
 
 		Random r = new Random();
 
-		gameId = p1Name.substring(r.nextInt(p1Name.length()))+p2Name.substring(r.nextInt(p2Name.length()))+String.valueOf(r.nextInt(9000)+1000);
-
-		imageOutput = imageOut;
+		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),p2Name.charAt(r.nextInt(p2Name.length()-1)),r.nextInt(9000)+1000));
 
 		board = new Board(this);
 
-		gameLog = new Log(this);
+		gameLog = new Log(this, imageOut, imageFileOut);
 
 		player1 = new Player(this, p1Name, true, Color.WHITE);
 		player2 = new Player(this, p2Name, true, Color.BLACK);
 
-		gameLog.logBoard(imageOut);
+		gameLog.logBoard();
 		gameLog.writeBuffer(String.format("New game started between %s and %s.", p1Name, p2Name));
-		// gameLog.writeBuffer("Turn: "+getCurrentPlayer().getName());
-	}
-
-	public Game(String p1Name, String p2Name){
-		this(p1Name, p2Name, false);
+		if (!imageOut) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 	}
 
 	public Game(String gameFile){
 		board = new Board(this);
-		gameLog = new Log(this);
 		try {
-			JSONObject gameData = gameLog.importGame(gameFile+".chess");
-			
+			JSONObject gameData = Log.importGame(gameFile+".chess");
+
 			player1 = new Player(this, gameData.getString("player1"), true, Color.WHITE);
 			player2 = new Player(this, gameData.getString("player2"), true, Color.BLACK);
 			
 			gameId = gameData.getString("id");
-			imageOutput = gameData.getBoolean("imageOutput");
 
+			gameLog = new Log(this, gameData.getBoolean("imageOutput"), gameData.optString("imageExportFile"));
+			
 			JSONArray jsonMoveArray = gameData.getJSONArray("moves");
+
 		    for (int i = 0; i < jsonMoveArray.length(); ++i)
 		    	gameLog.appendMoveHistory(jsonMoveArray.getString(i));
 		    performMoves(gameLog.getMoveHistory());
 		} catch (Exception e){
 			e.printStackTrace();
+			System.out.println("Error importing game file: "+gameFile+".chess");
 			System.exit(0);
 		}
-	    gameLog.logBoard(imageOutput);
-		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.getName(), player2.getName()));
-	}
-
-	public boolean getImageOutput(){
-		return imageOutput;
+	    gameLog.logBoard();
+		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.toString(), player2.toString()));
+		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 	}
 
 	public String getId(){
@@ -100,7 +97,7 @@ public class Game {
 
 
 		if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
-			gameLog.writeBuffer("Draw offer from "+getCurrentPlayer().getName()+" has expired.");
+			gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
 			getCurrentPlayer().draw = false;
 			drawOfferTurn = -1;
 		}
@@ -128,20 +125,24 @@ public class Game {
 
 		whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
 
-		// gameLog.writeBuffer("Turn: "+getCurrentPlayer().getName());
-		gameLog.logBoard(imageOutput);
+		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
+		gameLog.logBoard();
 	}
 
-	public String getOutput(){
+	public BufferedImage getBoardImage(){
+		return gameLog.getBoardImage();
+	}
+
+	public String getInfoOutput(){
 		return gameLog.getUnreadBuffer();
 	}
 
 	public boolean isCurrentPlayer(Player p){
-		return isCurrentPlayer(p.getName());
+		return isCurrentPlayer(p.toString());
 	}
 
 	public boolean isCurrentPlayer(String user){
-		return (getCurrentPlayer().getName().equals(user));
+		return (getCurrentPlayer().toString().equals(user));
 	}
 
 	public Player getCurrentPlayer(){
@@ -165,22 +166,20 @@ public class Game {
 	}
 
 	private static void endGame(String gameResult){
-		gameLog.logBoard(imageOutput);
+		gameLog.logBoard();
 		gameLog.writeBuffer("Game ended in "+gameResult);
 		dead = true;
 	}
 
 	private static void endGame(Player winner){
-		gameLog.logBoard(imageOutput);
-		gameLog.writeBuffer("\n"+((winner!=null)?(winner.getTeam().getColor()+" wins!"):"Game has reached Stalemate"));
+		gameLog.logBoard();
+		gameLog.writeBuffer("\n"+((winner!=null)?(winner+" wins!"):"Game has reached Stalemate"));
 		dead = true;
 	}
 
 	public static boolean isDead(){
 		return dead;
 	}
-
-	// saved games
 
 	public boolean saveGame(){
 		return gameLog.saveGame();
