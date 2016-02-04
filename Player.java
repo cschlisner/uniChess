@@ -91,7 +91,7 @@ public class Player {
 						Piece selectedTilePiece = board.getTile(select).getOccupator();
 						if (selectedTilePiece != null)
 							Game.gameLog.bufferAppendArray(selectedTilePiece.getMoves());
-						else Game.gameLog.bufferAppend("Tile at "+select+" has no piece.");
+						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
 						Game.gameLog.terminateBuffer();
 						return false;
 

@@ -14,6 +14,11 @@ import java.lang.Runtime;
 
 
 public class Log {
+
+	private static boolean autosave = true;
+	private static String saveDir = "saved_chess_games";
+
+
 	private Game game;
 	private Board board;
 
@@ -47,7 +52,8 @@ public class Log {
 		Runtime run = Runtime.getRuntime();
 		run.addShutdownHook(new Thread(){
 			public void run(){
-				saveGame();
+				if (autosave)
+					saveGame();
 			}
 		});
 	}
@@ -116,6 +122,14 @@ public class Log {
 		return moveHistory;
 	}
 
+	public void setAutosave(boolean as){
+		autosave = as;
+	}
+
+	public void setSaveDir(String newDir){
+		saveDir = newDir;
+	}
+
 	public boolean saveGame(){
 		try {
 			JSONObject gameSave = new JSONObject();
@@ -128,13 +142,14 @@ public class Log {
 			gameSave.put("id", game.getId());
 			gameSave.put("moves", moveHistory);
 
-			File savesDir = new File("saved_games");
+			File savesDir = new File(saveDir);
 			if (!savesDir.exists())
 				savesDir.mkdir();
 
-			PrintWriter writer = new PrintWriter("saved_games/"+game.getId()+".chess", "UTF-8");
+			PrintWriter writer = new PrintWriter(saveDir+game.getId()+".chess", "UTF-8");
 			gameSave.write(writer);
 			writer.close();
+			writeBuffer("Game saved as '"+saveDir+game.getId()+".chess'");
 			return true;
 		} catch(Exception e){
 			e.printStackTrace();

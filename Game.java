@@ -48,7 +48,7 @@ public class Game {
 	public Game(String gameFile){
 		board = new Board(this);
 		try {
-			JSONObject gameData = Log.importGame(gameFile+".chess");
+			JSONObject gameData = Log.importGame(gameFile+((gameFile.contains(".chess"))?"":".chess"));
 
 			player1 = new Player(this, gameData.getString("player1"), true, Color.WHITE);
 			player2 = new Player(this, gameData.getString("player2"), true, Color.BLACK);
@@ -63,9 +63,9 @@ public class Game {
 		    	gameLog.appendMoveHistory(jsonMoveArray.getString(i));
 		    performMoves(gameLog.getMoveHistory());
 		} catch (Exception e){
-			e.printStackTrace();
 			System.out.println("Error importing game file: "+gameFile+".chess");
-			System.exit(0);
+			e.printStackTrace();
+			return null;
 		}
 	    gameLog.logBoard();
 		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.toString(), player2.toString()));
@@ -125,8 +125,8 @@ public class Game {
 
 		whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
 
-		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 		gameLog.logBoard();
+		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 	}
 
 	public BufferedImage getBoardImage(){
@@ -187,7 +187,9 @@ public class Game {
 
 	private void performMoves(List<String> moves){
 		if (moves != null)
-			for (String m : moves)
+			for (String m : moves){
+				getInfoOutput();
 				input(m, false);
+			}
 	}
 }
