@@ -52,13 +52,12 @@ You can use the ".chess" extension or just use the filename.
 // that will export a rendering of the board text to "currentboard.png" after each turn. 
 Game myGame = new Game("Me", "You", true, "currentBoard.png"); 
 
-// Creates a new game that will "Me" (player 1 - White) and "You" (Player 2 - Black)
+// Creates a new game with players "Me" (player 1 - White) and "You" (Player 2 - Black)
 // that will display the board along with the current turn in the information buffer
 Game myGame = new Game("Me", "You");
 
-// Creates a new game that will "Me" (player 1 - White) and "You" (Player 2 - Black)
-// that will continue the saved game (with the saved output settings and player names)
-// aswell as display the last board.
+// Creates a new game that will continue the saved game "game.chess" in directory "/path/to/saved/"
+// (with the saved output settings and player names) as well as display the last board state.
 Game myGame = new Game("/path/to/saved/game.chess");
 ```
 ___
