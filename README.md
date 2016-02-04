@@ -1,5 +1,5 @@
 # uniChess
-##A general chess API for java
+##A general chess API for java built from scratch
 
 ![alt text](http://i.imgur.com/5c8CG87.png "Example Image output")
 
