@@ -5,14 +5,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 // Image libs
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.image.*;
-import java.awt.geom.AffineTransform;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Color;
 import java.io.*;
 import javax.imageio.ImageIO;
 
@@ -29,13 +23,26 @@ public class Log {
 
 	private List<String> moveHistory = new ArrayList<String>();
 
+	private Font boardFont, textFont;
+	private FontMetrics boardFontMetrics;
 
-	public Log(Game g){
+	private boolean imageOut, exportImage;
+	private BufferedImage lastBoardImage;
+	private String imageExportFile;
+
+	public Log(Game g, boolean imageO, String fileName){
+		imageOut = imageO;
+		exportImage = (fileName!=null);
+		imageExportFile = fileName;
+		
+		imageIOSetup();
+
 		game = g;
 		board = g.getBoard();
 
 		bufferHistory = new ArrayList<String>();
 		bufferRead = 0;
+
 
 		Runtime run = Runtime.getRuntime();
 		run.addShutdownHook(new Thread(){
@@ -43,6 +50,10 @@ public class Log {
 				saveGame();
 			}
 		});
+	}
+
+	public boolean isImageOut(){
+		return imageOut;
 	}
 
 	public <T>void writeBuffer(T str){
@@ -111,11 +122,17 @@ public class Log {
 
 			gameSave.put("player1", game.player1.getName());
 			gameSave.put("player2", game.player2.getName());
-			gameSave.put("imageOutput", game.getImageOutput());
+			gameSave.put("imageOutput", imageOut);
+			if (exportImage)
+				gameSave.put("imageExportFile", imageExportFile);
 			gameSave.put("id", game.getId());
 			gameSave.put("moves", moveHistory);
 
-			PrintWriter writer = new PrintWriter(game.getId()+".chess", "UTF-8");
+			File savesDir = new File("saved_games");
+			if (!savesDir.exists())
+				savesDir.mkdir();
+
+			PrintWriter writer = new PrintWriter("saved_games/"+game.getId()+".chess", "UTF-8");
 			gameSave.write(writer);
 			writer.close();
 			return true;
@@ -125,7 +142,7 @@ public class Log {
 		return false;
 	}
 
-	public JSONObject importGame(String filename){
+	public static JSONObject importGame(String filename){
 		JSONObject gameData;
 
 		try(BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -147,7 +164,7 @@ public class Log {
 		return null;
 	}
 
-	public void logBoard(boolean imageOut){
+	public void logBoard(){
 		boolean reversed = game.isCurrentPlayer(game.player2);
 
 		startBuffer();
@@ -179,60 +196,93 @@ public class Log {
 		writeColumnLabels(max, reversed);
 		terminateBuffer();
 
-		if (imageOut)
-			createBoardImage();
+		if (imageOut){
+			lastBoardImage = createBoardImage();
+			getBoardImage();
+		}
 	}
 
-	private void createBoardImage(){
-		String outputFileName = game.defaultFileOut;
-	    String[] boardTextLines = getLastBuffer().split("\n");
-	    removeLastBuffer();
+	private void imageIOSetup(){
+		try {
 
-		Font boardFont = new Font("DejaVu Sans Mono", Font.PLAIN, 40);
-		FontMetrics metrics = new BufferedImage(1,1, BufferedImage.TYPE_INT_RGB).getGraphics().getFontMetrics(boardFont);
-		int fontHeight = metrics.getHeight();
-		int fontAdvFull = metrics.stringWidth(boardTextLines[1]);
-		int fontAdvOne = metrics.stringWidth(" ");
-		int fontAdvBoard = metrics.stringWidth(boardTextLines[0]);
+			File fontFile = new File(this.getClass().getResource("font/DejaVuSansMono.ttf").getPath());
+			boardFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(40.0f);
+		    GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(boardFont);
 
-		BufferedImage bufferedImage = new BufferedImage(fontAdvFull+4, (fontHeight*11), BufferedImage.TYPE_INT_RGB);
+			textFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(22.0f);
+		    GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(textFont);
 
-	    Graphics2D g = bufferedImage.createGraphics();
+			boardFontMetrics = new BufferedImage(1,1, BufferedImage.TYPE_INT_RGB).getGraphics().getFontMetrics(boardFont);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
 
-		// Background
-		g.setColor(new Color(238,238,238));
-		g.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+	public void exportBoardImage(){
+		try {
+		    File outputfile = new File(imageExportFile);
+		    ImageIO.write(lastBoardImage, "png", outputfile);
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+	}
 
-	    // Text color
-	    g.setColor(new Color(34, 49, 63));
-	    g.setFont(boardFont);
-	    int i = 0;
-	    for (String line : boardTextLines){
-	    	g.drawString(line, 2, (++i*fontHeight));
-	    }
+	public BufferedImage getBoardImage(){
+		if (lastBoardImage == null)
+			createBoardImage();
 
-	    // Turn Colors light | dark
-	    Color light = new Color(189,195,199);
-	    Color dark = new Color(34, 49, 63);
+		if (exportImage)
+			exportBoardImage();
 
-	    g.setColor((game.isCurrentPlayer(game.player2)?dark:light));
-		g.fillRect(0, (i*fontHeight)+10, bufferedImage.getWidth(), bufferedImage.getHeight());
-		
-		g.setColor((game.isCurrentPlayer(game.player2)?light:dark));
-		boardFont = new Font("DejaVu Sans Mono", Font.PLAIN, 22);
-		g.setFont(boardFont);
-		
-		String nombre = game.getCurrentPlayer().getName();
-		int halfNombre = (nombre.length()/2);
-		g.drawString(nombre, (bufferedImage.getWidth()/2)-(g.getFontMetrics(boardFont).stringWidth(nombre.substring(halfNombre))), (i*fontHeight)+35);
-	    g.dispose();
-	    
+		return lastBoardImage;
+	}
+
+	private BufferedImage createBoardImage(){
 	    try{
-            File outputfile = new File(outputFileName);
-            ImageIO.write(bufferedImage, "png", outputfile);
+
+		    String[] boardTextLines = getLastBuffer().split("\n");
+		    removeLastBuffer();
+
+
+			int boardFontHeight = boardFontMetrics.getHeight();
+			int boardFontAdvFull = boardFontMetrics.stringWidth(boardTextLines[1]);
+
+			BufferedImage bufferedImage = new BufferedImage(boardFontAdvFull+4, (boardFontHeight*11), BufferedImage.TYPE_INT_RGB);
+
+		    Graphics2D g = bufferedImage.createGraphics();
+			// Background
+			g.setColor(new Color(238,238,238));
+			g.fillRect(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+
+		    // Text color
+		    g.setColor(new Color(34, 49, 63));
+		    g.setFont(boardFont);
+		    int i = 0;
+		    for (String line : boardTextLines){
+		    	g.drawString(line, 2, (++i*boardFontHeight));
+		    }
+
+		    // Turn Colors light | dark
+		    Color light = new Color(189,195,199);
+		    Color dark = new Color(34, 49, 63);
+
+		    g.setColor((game.isCurrentPlayer(game.player2)?dark:light));
+			g.fillRect(0, (i*boardFontHeight)+10, bufferedImage.getWidth(), bufferedImage.getHeight());
+			
+			g.setColor((game.isCurrentPlayer(game.player2)?light:dark));
+			//boardFont = new Font(defaultFont, Font.PLAIN, 22);
+			g.setFont(textFont);
+			
+			String nombre = game.getCurrentPlayer().toString();
+			int halfNombre = (nombre.length()/2);
+			g.drawString(nombre, (bufferedImage.getWidth()/2)-(g.getFontMetrics(textFont).stringWidth(nombre.substring(halfNombre))), (i*boardFontHeight)+35);
+		    g.dispose();
+	    	
+	    	return bufferedImage;
         } catch(Exception e){
             e.printStackTrace();
         }
+        return null;
 	}
 
 	private void writeColumnLabels(int max, boolean reversed){
