@@ -47,8 +47,9 @@ public class Game {
 
 	public Game(String gameFile){
 		board = new Board(this);
+		gameFile+=((gameFile.contains(".chess"))?"":".chess";
 		try {
-			JSONObject gameData = Log.importGame(gameFile+((gameFile.contains(".chess"))?"":".chess"));
+			JSONObject gameData = Log.importGame(gameFile);
 
 			player1 = new Player(this, gameData.getString("player1"), true, Color.WHITE);
 			player2 = new Player(this, gameData.getString("player2"), true, Color.BLACK);
@@ -63,9 +64,9 @@ public class Game {
 		    	gameLog.appendMoveHistory(jsonMoveArray.getString(i));
 		    performMoves(gameLog.getMoveHistory());
 		} catch (Exception e){
-			System.out.println("Error importing game file: "+gameFile+".chess");
+			System.out.println("Error importing game file: "+gameFile);
 			e.printStackTrace();
-			return null;
+			return;
 		}
 	    gameLog.logBoard();
 		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.toString(), player2.toString()));
