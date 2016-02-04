@@ -88,7 +88,10 @@ public class Player {
 					case "get":
 						Game.gameLog.startBuffer();
 						Location select = new Location(tokens[index++]);
-						Game.gameLog.bufferAppendArray(board.getTile(select).getOccupator().getMoves());
+						Piece selectedTilePiece = board.getTile(select).getOccupator();
+						if (selectedTilePiece != null)
+							Game.gameLog.bufferAppendArray(selectedTilePiece.getMoves());
+						else Game.gameLog.bufferAppend("Tile at "+select+" has no piece.");
 						Game.gameLog.terminateBuffer();
 						return false;
 
