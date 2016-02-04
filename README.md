@@ -19,7 +19,7 @@ You can create a new game with the Constructor:
 
 If `imageExportFile` is null, the board images will not be exported, and will need to be retrieved after each input with the `myGame.getImageOutput()` function.
 
-If `imageOutput` is false, the board will be put into the information output buffer (as a uniform grid, with unicode chars for the chess pieces) to be read along with regular text information.
+If `imageOutput` is false, the board will be put into the information output buffer as a uniform grid, with *unicode* chars for the chess pieces (*note: if your font for displaying output does not support unicode the pieces will not display correctly*) to be read along with regular text information.
 
 If the alternate constructor is used:
 
