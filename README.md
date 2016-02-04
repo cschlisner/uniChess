@@ -27,7 +27,7 @@ If the alternate constructor is used:
 
 Then a new game is created with `imageOutput` set to false and `imageExportFile` set to null.
 
-A game can also be started using a previously saved game. (See *Saved Games*):
+A game can also be started using a previously saved game. (See **Saving Games**):
 
 <b>`Game myGame = new Game("/path/to/savedgame.chess");`</b>
 
