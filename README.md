@@ -15,7 +15,11 @@ All communication with the game is done through a Game object.
 
 You can create a new game with the Constructor:
 
-<b>`Game myGame = new Game(String player1Name, String player2Name, boolean imageOutput, String imageExportFile);`</b>
+<b>
+```java
+Game myGame = new Game(String player1Name, String player2Name, boolean imageOutput, String imageExportFile);
+```
+</b>
 
 If `imageExportFile` is null, the board images will not be exported, and will need to be retrieved after each input with the `myGame.getImageOutput()` function.
 
@@ -23,13 +27,21 @@ If `imageOutput` is false, the board will be put into the information output buf
 
 If the alternate constructor is used:
 
-<b>`Game myGame = new Game(String player1Name, String player2Name);`</b>
+<b>
+```java
+Game myGame = new Game(String player1Name, String player2Name);
+```
+</b>
 
 Then a new game is created with `imageOutput` set to false and `imageExportFile` set to null.
 
 A game can also be started using a previously saved game. (See **Saving Games**):
 
-<b>`Game myGame = new Game("/path/to/savedgame.chess");`</b>
+<b>
+```java
+Game myGame = new Game("/path/to/savedgame.chess");
+```
+</b>
 
 You can use the ".chess" extension or just use the filename.
 
