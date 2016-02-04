@@ -31,7 +31,7 @@ public class Game {
 
 		Random r = new Random();
 
-		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),p2Name.charAt(r.nextInt(p2Name.length()-1)),r.nextInt(9000)+1000));
+		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),p2Name.charAt(r.nextInt(p2Name.length()-1)),r.nextInt(9000)+1000);
 
 		board = new Board(this);
 

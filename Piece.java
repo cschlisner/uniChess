@@ -10,7 +10,6 @@ public class Piece {
 	private Game.Color color;
 	
 	private boolean killed = false;
-	private String id;
 	private String name;
 	private String symbol;
 	private Game.PieceType type;
@@ -24,7 +23,6 @@ public class Piece {
 		game = g;
     	board = g.getBoard();
 		this.team = tm;
-		this.id = String.format("%d%d", l.x,l.y);
 		this.type = type;
 		this.color = c;
 		this.startPoint = l;
@@ -238,10 +236,6 @@ public class Piece {
 
 	public boolean ofType(Game.PieceType t){
 		return type.equals(t);
-	}
-
-	public String getId(){
-		return id;
 	}
 
 	public Object[] getMoves(){

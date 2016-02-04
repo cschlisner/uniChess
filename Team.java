@@ -67,13 +67,6 @@ public class Team {
     	return null;
     }
 
-    public Piece getPiece(String id){
-    	for (Piece p : pieceSet)
-    		if (p.getId().equals(id))
-    			return p;
-    	return null;
-    }
-
     public List<Location> getAllMoves(){
     	List<Location> mvlst = new ArrayList<Location>();
     	for (Piece p : pieceSet){
@@ -137,16 +130,17 @@ public class Team {
             for (Piece p : pieceSet){
                 moveloop:
                 for (Location move : p.getMoveList()){
-                   for (Piece a : attackers){
-			if (p.ofType(Game.PieceType.KING))
-				moves.add(move);
-                        else if (a.canCheck(move))
+        			if (p.ofType(Game.PieceType.KING)){
+        				moves.add(move);
+                        continue moveloop;
+                    }
+                   for (Piece a : attackers)
+                        if (a.canCheck(move))
                             continue moveloop;
-		    }
                     moves.add(move);
                 }
             }
         }
     	return moves;
-	}
+    }
 }
