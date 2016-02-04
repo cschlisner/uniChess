@@ -83,10 +83,11 @@ class ConsoleChess {
 		Game chessGame = new Game("Player one", "Player two"); // player names
 
 		while (!chessGame.isDead()){
-			System.out.println(chessGame.getOutput()); // Read output first (for initial output)
-			chessGame.input(in.nextLine());            // Supply input
+			System.out.println(chessGame.getInfoOutput());
+			
+			chessGame.input(in.nextLine());
 		}
-		System.out.println(chessGame.getOutput()); // read last buffer
+		System.out.println(chessGame.getInfoOutput()); // read last buffer
 	}
 }
 ```
