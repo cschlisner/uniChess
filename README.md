@@ -1,6 +1,10 @@
 # uniChess
 ##A general chess API for java
 
+![alt text](http://i.imgur.com/5c8CG87.png "Example Image output")
+
+
+
 This API is intended for use in other java applications where you might need to play a chess game for whatever reason. 
 
 
