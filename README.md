@@ -23,6 +23,17 @@ If the alternate constructor is used:
 
 Then a new game is created with `imageOutput` set to false and `imageExportFile` set to null.
 
+######Example:
+
+```java
+// Creates a new game with players "Me" (player 1 - White) and "You" (Player 2 - Black) 
+// that will export a rendering of the board text to "currentboard.png" after each turn. 
+Game myGame = new Game("Me", "You", true, "currentBoard.png"); 
+
+// Creates a new game that will "Me" (player 1 - White) and "You" (Player 2 - Black)
+// that will display the board along with the current turn in the information buffer
+Game myGame = new Game("Me", "You");
+```
 ___
 
 ###Reading output
@@ -50,3 +61,28 @@ To suppy a line of input, call <b>`myGame.input(String playerInput)`</b>. Valid 
 <b>`draw`</b> Offers a draw to the opponent. This will not advance the turn, so a move must be made in conjunction. If the opponent does not also input draw on their next turn, then the draw offer will expire.
 
 <b>`help`</b> Writes a list of these commands to the buffer. 
+
+___
+
+### Complete Example
+
+This is a working example of a complete console based chessGame:
+
+```java
+import uniChess.*;
+import java.util.Scanner;
+
+class ConsoleChess {
+	public static void main(String[] args){
+		Scanner in = new Scanner(System.in);
+
+		Game chessGame = new Game("Player one", "Player two"); // player names
+
+		while (!chessGame.isDead()){
+			System.out.println(chessGame.getOutput()); // Read output first (for initial output)
+			chessGame.input(in.nextLine());            // Supply input
+		}
+		System.out.println(chessGame.getOutput()); // read last buffer
+	}
+}
+```
