@@ -27,6 +27,12 @@ If the alternate constructor is used:
 
 Then a new game is created with `imageOutput` set to false and `imageExportFile` set to null.
 
+A game can also be started using a previously saved game. (See *Saved Games*):
+
+<b>`Game myGame = new Game("/path/to/savedgame.chess");`</b>
+
+You can use the ".chess" extension or just use the filename.
+
 ######Example:
 
 ```java
@@ -37,6 +43,11 @@ Game myGame = new Game("Me", "You", true, "currentBoard.png");
 // Creates a new game that will "Me" (player 1 - White) and "You" (Player 2 - Black)
 // that will display the board along with the current turn in the information buffer
 Game myGame = new Game("Me", "You");
+
+// Creates a new game that will "Me" (player 1 - White) and "You" (Player 2 - Black)
+// that will continue the saved game (with the saved output settings and player names)
+// aswell as display the last board.
+Game myGame = new Game("/path/to/saved/game.chess");
 ```
 ___
 
@@ -91,3 +102,18 @@ class ConsoleChess {
 	}
 }
 ```
+
+___
+
+### Saving Games
+
+By default, autosave is ON - that means when your application exits (for whatever reason) the current game will be saved automatically in the directory that is specified in <b>Log.java<b>. 
+
+Autosave can be set ON or OFF by calling `myGame.gameLog.setAutosave(true)` or `myGame.gameLog.setAutosave(false)` respectively.
+
+You can also set the save directory with `myGame.gameLog.setSaveDir("/new/directory")`.
+
+Games can be saved at any time by calling `myGame.gameLog.saveGame()`. This will save the current game as a .chess file with the game ID (which is randomly generated at Game construction) as the filename, in the save directory. Games are saved in JSON format.
+
+
+Use the path of a saved game to reload a saved game using the Game constructor: `Game(String gameFile)` to create a new Game object.
