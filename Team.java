@@ -87,6 +87,9 @@ public class Team {
             checkedMoves = updateCheckedMoves();
         if (updateCheckMate())
             checkMated = true;
+        
+        for (Piece p : pieceSet)
+            p.update();
     }
 
     public boolean inCheck(){

@@ -7,7 +7,7 @@ public class Player {
 	public boolean forfeit, draw;
 	private Game game;
 	private Board board;
-    private String[] cmdList = {"move", "get", "status", "forfeit", "help", "draw"};
+    private String[] cmdList = {"move", "get", "status", "forfeit", "help", "draw", "attack", "protect"};
     public boolean isHuman;
     private String name;
     public Team team;
@@ -111,6 +111,26 @@ public class Player {
 						Game.gameLog.startBuffer();
 						Game.gameLog.bufferAppend("Commands: ");
 						Game.gameLog.bufferAppendArray(cmdList);
+						Game.gameLog.terminateBuffer();
+						return false;
+
+					case "attack":
+						Game.gameLog.startBuffer();
+						select = new Location(tokens[index++]);
+						selectedTilePiece = board.getTile(select).getOccupator();
+						if (selectedTilePiece != null)
+							Game.gameLog.bufferAppendArray(selectedTilePiece.attackedPieces.toArray());
+						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
+						Game.gameLog.terminateBuffer();
+						return false;
+
+					case "protect":
+						Game.gameLog.startBuffer();
+						select = new Location(tokens[index++]);
+						selectedTilePiece = board.getTile(select).getOccupator();
+						if (selectedTilePiece != null)
+							Game.gameLog.bufferAppendArray(selectedTilePiece.protectedPieces.toArray());
+						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
 						Game.gameLog.terminateBuffer();
 						return false;
 				}

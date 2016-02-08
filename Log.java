@@ -146,10 +146,10 @@ public class Log {
 			if (!savesDir.exists())
 				savesDir.mkdir();
 
-			PrintWriter writer = new PrintWriter(saveDir+game.getId()+".chess", "UTF-8");
+			PrintWriter writer = new PrintWriter(saveDir+"/"+game.getId()+".chess", "UTF-8");
 			gameSave.write(writer);
 			writer.close();
-			writeBuffer("Game saved as '"+saveDir+game.getId()+".chess'");
+			writeBuffer("Game saved as '"+saveDir+"/"+game.getId()+".chess'");
 			return true;
 		} catch(Exception e){
 			e.printStackTrace();

@@ -81,10 +81,13 @@ public class Game {
 		input(in, true);
 	}
 
-	public void input(String in, boolean logMove){
-		getCurrentPlayer().getTeam().updateStatus();
 
-		boolean endTurn = getCurrentPlayer().readMove(in);
+	boolean endTurn = true;
+
+	public void input(String in, boolean logMove){
+		if (endTurn) getCurrentPlayer().getTeam().updateStatus();
+
+		endTurn = getCurrentPlayer().readMove(in);
 
 		if (endTurn){
 			if (logMove) gameLog.appendMoveHistory(in);
