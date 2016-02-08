@@ -19,6 +19,8 @@ public class Piece {
 	
 	private Piece qscRook, kscRook;
 
+	public List<Piece> attackedPieces, protectedPieces;
+
 	public Piece(Game g, Team tm, Game.PieceType type, Game.Color c, int d, Location l){
 		game = g;
     	board = g.getBoard();
@@ -27,6 +29,8 @@ public class Piece {
 		this.color = c;
 		this.startPoint = l;
 		this.location = startPoint;
+		attackedPieces = new ArrayList<Piece>();
+		protectedPieces = new ArrayList<Piece>();
 
 		switch(type){
 			case PAWN:
@@ -36,17 +40,21 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
+						int yDiff = (this.dir>0)?m.y-piece.location.y:piece.location.y-m.y; // v this.direction matters
+						int xDiff = Math.abs(m.x-piece.location.x);                    // h this.direction doesn't
+
+						if (yDiff == 1 && xDiff==1 && !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+						
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
-
-							int yDiff = (this.dir>0)?m.y-piece.location.y:piece.location.y-m.y; // v this.direction matters
-							int xDiff = Math.abs(m.x-piece.location.x);                    // h this.direction doesn't
-							
-							if (yDiff<(piece.location.equals(piece.startPoint)?3:2) && yDiff > 0)
-								if ((yDiff==2 && xDiff==0 && t.getOccupator()==null) 
-									|| (yDiff == 1 && xDiff==0 && t.getOccupator()==null) 
-									|| (yDiff == 1 && xDiff==1 && t.containsEnemy(piece)))
-									return true;
-
+							if (yDiff<(piece.location.equals(piece.startPoint)?3:2) && yDiff > 0){
+								boolean canAttack = (yDiff == 1 && xDiff==1 && t.containsEnemy(piece));
+								if ((yDiff==2 && xDiff==0 && t.getOccupator()==null) || (yDiff == 1 && xDiff==0 && t.getOccupator()==null) || canAttack){ 
+										if (canAttack)
+											piece.attackedPieces.add(t.getOccupator());
+										return true;	
+								}
+							}
 							return false;
 						} 
 						return false;
@@ -60,10 +68,15 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && board.cardinalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+						else if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
 
-
-							return (t.available(piece) && board.cardinalLineOfSightClear(piece.location, m));
+							if (t.available(piece) && board.cardinalLineOfSightClear(piece.location, m)){
+								if (t.containsEnemy(piece))
+									piece.attackedPieces.add(t.getOccupator());
+								return true;
+							}
 						}
 						return false;
 					}
@@ -76,12 +89,20 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						t = board.getTile(m);
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
-							// this.direction doesn't matter
-							int yDiff = Math.abs(m.y-piece.location.y);
-							int xDiff = Math.abs(m.x-piece.location.x);
+						int yDiff = Math.abs(m.y-piece.location.y);
+						int xDiff = Math.abs(m.x-piece.location.x);
 
-							return (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2)));
+						if (!m.equals(piece.location) && (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))) && !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+						
+						else if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+							// this.direction doesn't matter
+
+							if (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))){
+								if (t.containsEnemy(piece))
+									piece.attackedPieces.add(t.getOccupator());
+								return true;
+							}
 						}
 						return false;
 					}
@@ -94,8 +115,15 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						t = board.getTile(m);
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale()))))
-							return (board.diagonalLineOfSightClear(piece.location, m));
+						if (!m.equals(piece.location) && board.diagonalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+						else if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+							if (board.diagonalLineOfSightClear(piece.location, m)){
+								if (t.containsEnemy(piece))
+									piece.attackedPieces.add(t.getOccupator());
+								return true;
+							}
+						}
 						return false;
 					}
 				};
@@ -107,8 +135,17 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
-							return ((board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)));
+
+						if (!m.equals(piece.location) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)) 
+							&& !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+
+						else if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+							if (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)){
+								if (t.containsEnemy(piece))
+									piece.attackedPieces.add(t.getOccupator());
+								return true;
+							}
 						}
 						return false;
 					}
@@ -121,9 +158,14 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
-						if (!m.equals(piece.location) && t.available(piece)){
-							int yDiff = Math.abs(m.y-piece.location.y);
-							int xDiff = Math.abs(m.x-piece.location.x);
+						int yDiff = Math.abs(m.y-piece.location.y);
+						int xDiff = Math.abs(m.x-piece.location.x);
+
+						if (!m.equals(piece.location) && ((xDiff<2&&yDiff<2) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)))
+							 && !t.available(piece) && !t.containsEnemy(piece))
+								piece.protectedPieces.add(t.getOccupator());
+							
+						else if (!m.equals(piece.location) && t.available(piece)){
 	
 							// this will put the King into check, thus is not legal move
 							for (Piece p : piece.getOpponent().getPieceSet())
@@ -131,6 +173,7 @@ public class Piece {
 										||(p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m) && m.x != p.location.x) // pieces can move in front of a pawn even though it's a valid pawn move
 										||(!p.type.equals(Game.PieceType.KING) && !p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m))) 
 										return false;
+							
 	
 							// castling moves
 							if (movesMade.isEmpty() && m.y == piece.startPoint.y){
@@ -149,7 +192,11 @@ public class Piece {
 									return true;
 							}
 	
-							return ((xDiff<2&&yDiff<2) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)));
+							if ((xDiff<2&&yDiff<2) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m))){
+								if (t.containsEnemy(piece))
+									piece.attackedPieces.add(t.getOccupator());
+								return true;
+							}
 						}
 						return false;
 					}
@@ -164,6 +211,10 @@ public class Piece {
 			Location prevLoc = location;
 			boolean r = board.getTile(dest).attemptMove(this);
 			if (r){
+
+				attackedPieces.clear();
+				protectedPieces.clear();
+
 				if (kscRook!=null) {
 					// need to force this move because it's not valid, technically
 					Location newRookLoc = new Location(prevLoc.x+(moveSet.dir), prevLoc.y);

@@ -47,7 +47,7 @@ public class Game {
 
 	public Game(String gameFile){
 		board = new Board(this);
-		gameFile+=((gameFile.contains(".chess"))?"":".chess";
+		gameFile+=((gameFile.contains(".chess"))?"":".chess");
 		try {
 			JSONObject gameData = Log.importGame(gameFile);
 

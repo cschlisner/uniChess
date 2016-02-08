@@ -2,6 +2,9 @@ package uniChess;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
 public class Team {
     private Game game;
     private Board board;
@@ -67,12 +70,14 @@ public class Team {
     	return null;
     }
 
-    public List<Location> getAllMoves(){
-    	List<Location> mvlst = new ArrayList<Location>();
-    	for (Piece p : pieceSet){
-    		mvlst.addAll(p.getMoveList());
-    	}
-    	return mvlst;
+    public Map<Piece, List<Location>> getAllMoves(){
+        Map<Piece, List<Location>> movesList = new HashMap<Piece, List<Location>>();
+
+    	for (Piece p : pieceSet)
+            if (!p.isDead())
+    		  movesList.put(p, p.getMoveList());
+
+        return movesList;
     }
 
     public void updateStatus(){
@@ -107,7 +112,7 @@ public class Team {
         if (!getPiece(Game.PieceType.KING).getMoveList().isEmpty())
             return false;
 
-        if ((pieceSet.size() == 1 && getAllMoves().isEmpty()) || (checked && getAllMoves().isEmpty()) || (checked && checkedMoves.isEmpty()))
+        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
             return true;
 
         return false;
