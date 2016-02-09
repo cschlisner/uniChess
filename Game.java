@@ -85,8 +85,6 @@ public class Game {
 	boolean endTurn = true;
 
 	public void input(String in, boolean logMove){
-		getCurrentPlayer().getTeam().updateStatus();
-
 		endTurn = getCurrentPlayer().readMove(in);
 		
 		getDormantPlayer().getTeam().updateStatus();
