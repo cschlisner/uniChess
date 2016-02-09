@@ -55,6 +55,11 @@ public class Team {
         board.getTile(p.getLocation()).setOccupator(p);
     }
 
+    public void addTeamToBoard(){
+        for (Piece p : pieceSet)
+            board.getTile(p.getLocation()).setOccupator(p);
+    }
+
     public Game.Color getColor(){
     	return color;
     }
@@ -74,7 +79,7 @@ public class Team {
         Map<Piece, List<Location>> movesList = new HashMap<Piece, List<Location>>();
 
     	for (Piece p : pieceSet)
-            if (!p.isDead())
+            if (!p.isDead() && p.getMoveList().size()>0)
     		  movesList.put(p, p.getMoveList());
 
         return movesList;
@@ -104,9 +109,9 @@ public class Team {
     public List<Piece> getAttackers(){
         return attackers;
     }
-    public boolean canMoveWhenChecked(Location move){
+    public boolean canMoveWhenChecked(Piece p, Location move){
         for (Piece a : attackers)
-            if (a.canCheck(move))
+            if (a.canCheck(p, move))
                 return false;
         return true;
     }
@@ -115,7 +120,7 @@ public class Team {
         if (!getPiece(Game.PieceType.KING).getMoveList().isEmpty())
             return false;
 
-        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
+        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
             return true;
 
         return false;
@@ -143,7 +148,7 @@ public class Team {
                         continue moveloop;
                     }
                    for (Piece a : attackers)
-                        if (a.canCheck(move))
+                        if (a.canCheck(p, move))
                             continue moveloop;
                     moves.add(move);
                 }

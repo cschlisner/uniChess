@@ -33,7 +33,7 @@ public class Game {
 
 		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),p2Name.charAt(r.nextInt(p2Name.length()-1)),r.nextInt(9000)+1000);
 
-		board = new Board(this);
+		board = new Board();
 
 		gameLog = new Log(this, imageOut, imageFileOut);
 
@@ -46,7 +46,7 @@ public class Game {
 	}
 
 	public Game(String gameFile){
-		board = new Board(this);
+		board = new Board();
 		gameFile+=((gameFile.contains(".chess"))?"":".chess");
 		try {
 			JSONObject gameData = Log.importGame(gameFile);
@@ -85,9 +85,11 @@ public class Game {
 	boolean endTurn = true;
 
 	public void input(String in, boolean logMove){
-		if (endTurn) getCurrentPlayer().getTeam().updateStatus();
+		getCurrentPlayer().getTeam().updateStatus();
 
 		endTurn = getCurrentPlayer().readMove(in);
+		
+		getDormantPlayer().getTeam().updateStatus();
 
 		if (endTurn){
 			if (logMove) gameLog.appendMoveHistory(in);
@@ -111,11 +113,13 @@ public class Game {
 			gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input draw to accept.");
 		}
 
-		if (getCurrentPlayer().getTeam().inCheck())
+		if (getDormantPlayer().getTeam().inCheck())
 			gameLog.writeBuffer("You are in check!");
 
-		if (getDormantPlayer().getTeam().inCheckMate())
+		if (getDormantPlayer().getTeam().inCheckMate()){
 			endGame(getCurrentPlayer());
+			return;
+		}
 
 		if (gameInStaleMate(getCurrentPlayer())){
 			endGame("Stalemate");
@@ -170,13 +174,13 @@ public class Game {
 	}
 
 	private static void endGame(String gameResult){
-		gameLog.logBoard();
+		//gameLog.logBoard();
 		gameLog.writeBuffer("Game ended in "+gameResult);
 		dead = true;
 	}
 
 	private static void endGame(Player winner){
-		gameLog.logBoard();
+		//gameLog.logBoard();
 		gameLog.writeBuffer("\n"+((winner!=null)?(winner+" wins!"):"Game has reached Stalemate"));
 		dead = true;
 	}
@@ -190,10 +194,11 @@ public class Game {
 	}
 
 	private void performMoves(List<String> moves){
-		if (moves != null)
+		if (moves != null){
 			for (String m : moves){
 				getInfoOutput();
 				input(m, false);
 			}
+		}
 	}
 }

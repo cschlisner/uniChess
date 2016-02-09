@@ -49,7 +49,7 @@ public class Piece {
 						if (yDiff == 1 && xDiff==1 && !t.available(piece) && !t.containsEnemy(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 						
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 							if (yDiff<(piece.location.equals(piece.startPoint)?3:2) && yDiff > 0){
 								
 								boolean canAttack = (yDiff == 1 && xDiff==1 && t.containsEnemy(piece));
@@ -74,7 +74,7 @@ public class Piece {
 						Board.Tile t = board.getTile(m);
 						if (!m.equals(piece.location) && board.cardinalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 
 							if (t.available(piece) && board.cardinalLineOfSightClear(piece.location, m)){
 								if (t.containsEnemy(piece))
@@ -100,7 +100,7 @@ public class Piece {
 								if (!protectedPieces.contains(t.getOccupator())) 
 									piece.protectedPieces.add(t.getOccupator());
 						
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 							if (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))){
 								if (t.containsEnemy(piece))
 									piece.attackedPieces.add(t.getOccupator());
@@ -123,7 +123,7 @@ public class Piece {
 						if (!m.equals(piece.location) && board.diagonalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 							if (board.diagonalLineOfSightClear(piece.location, m)){
 								if (t.containsEnemy(piece))
 									piece.attackedPieces.add(t.getOccupator());
@@ -146,7 +146,7 @@ public class Piece {
 							&& !t.available(piece) && !t.containsEnemy(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 							if (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)){
 								if (t.containsEnemy(piece))
 									piece.attackedPieces.add(t.getOccupator());
@@ -245,6 +245,7 @@ public class Piece {
 				}
 
 				moveSet.movesMade.add(dest);
+				update();
 			}
 			return r;
 		}
@@ -307,7 +308,6 @@ public class Piece {
 		return moveList;
 	}
 
-
 	public boolean canMove(Location m){
 		return moveSet.isValidMove(m);
 	}
@@ -319,22 +319,53 @@ public class Piece {
 		return false;
 	}
 
-	// if it has check when there is an enemy at this location
-	public boolean canCheck(Location simulatedEnemyLocation){
+	/**
+	* Determines whether or not this piece would hold check if the given piece
+	* were moved to this location. Needed to calculate available moves for opponent team 
+	* when in check.
+	* 
+	* @param simulatedEnemyLocation the location for the enemy piece to be simulated at
+	* @return whether this piece holds check when there is an enemy piece at this location. 
+	*/
+	public boolean canCheck(Piece movedPiece, Location simulatedEnemyLocation){
 		if (simulatedEnemyLocation.equals(location)) 
 			return false;
 
-		Piece tst = new Piece(game, getOpponent(), Game.PieceType.QUEEN, getOpponent().getColor(), (-1*moveSet.dir), simulatedEnemyLocation);
-
 		Piece original = board.getTile(simulatedEnemyLocation).getOccupator();
 
-		board.getTile(simulatedEnemyLocation).setOccupator(tst);
-		boolean res = hasCheck();
-		tst.kill();
+		board.getTile(simulatedEnemyLocation).setOccupator(movedPiece);
+		board.getTile(movedPiece.location).setOccupator(null);
 
+		boolean res = hasCheck();
+		
 		board.getTile(simulatedEnemyLocation).setOccupator(original);
+		board.getTile(movedPiece.location).setOccupator(movedPiece);
 
 		return res;
+	}
+
+	/**
+	* Returns a list of possible moves for this piece if it were to move to the selected location
+	* 
+	* @return list of possible moves for a simulated piece location
+	*/
+	public List<Location> getSimulatedMoves(Location simulatedPieceLocation){
+		if (simulatedPieceLocation.equals(location)) 
+			return moveList;
+
+		if (moveSet.isValidMove(simulatedPieceLocation)){
+
+			Location orgLoc = this.location;
+			this.location = simulatedPieceLocation;
+
+			List<Location> potentialMoves = moveSet.getValidMoves();
+			
+			this.location = orgLoc;
+			
+			return potentialMoves;
+		}
+		
+		return null;
 	}
 
 	private abstract class MoveSet {
@@ -354,7 +385,7 @@ public class Piece {
 
 		public List<Location> getValidMoves(){
 		 	List<Location> mList = new ArrayList<Location>();
-			for (Board.Tile[] tr : board.getBoardSpace()){
+			for (Board.Tile[] tr : board.getBoardState()){
 				for (Board.Tile t : tr){
 					if (isValidMove(t.getLocale()))
 						mList.add(t.getLocale());

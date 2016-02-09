@@ -1,23 +1,29 @@
 package uniChess;
 
 public class Board {
-	private Tile[][] space = new Tile[8][8];
+	private Tile[][] state = new Tile[8][8];
 
-	public Board(Game g){
+	public Board(){
 		for (int y=0; y<8; ++y)
 			for (int x=0; x<8; ++x)
-				space[y][x] = new Tile(new Location(x, 7-y));
+				state[y][x] = new Tile(new Location(x, 7-y));
 	}
 
-	public Tile[][] getBoardSpace(){
-		return space;
+	public Board(Board org){
+		for (int y=0; y<8; ++y)
+			for (int x=0; x<8; ++x)
+				this.state[y][x] = new Tile(org.state[y][x]);
+	}
+
+	public Tile[][] getBoardState(){
+		return state;
 	}
 
 	public Tile getTile(Location l){
 		return getTile(l.x, l.y);
 	}
 	public Tile getTile(int x, int y){
-		return space[7-y][x];
+		return state[7-y][x];
 	}
 
 	// Returns whether or not a line of sight between two Locations is 'clear' 
@@ -73,6 +79,13 @@ public class Board {
 			occupator = null;
 			color = ((loc.x+loc.y)%2==0)?Game.Color.BLACK:Game.Color.WHITE;
 		}
+
+		public Tile(Tile org){
+			this.locale = org.locale;
+			this.occupator = org.occupator;
+			this.color = org.color;
+		}
+
 		public Location getLocale(){	
 			return locale;
 		}
@@ -90,6 +103,7 @@ public class Board {
 		public void setOccupator(Piece p){
 			occupator = p;
 		}
+		
 		public boolean attemptMove(Piece p){
 			if (occupator != null){
 				if (!occupator.getTeam().equals(p.getTeam())){

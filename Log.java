@@ -184,11 +184,11 @@ public class Log {
 
 		startBuffer();
 
-		int max = findMaxLen(board.getBoardSpace());
+		int max = findMaxLen(board.getBoardState());
 		int y = 8;
 		writeColumnLabels(max, reversed);
 		if (!reversed){
-			for (Board.Tile[] row : board.getBoardSpace()){
+			for (Board.Tile[] row : board.getBoardState()){
 				bufferAppend(y);
 				for (Board.Tile el : row){
 					bufferAppend(el);
@@ -198,11 +198,11 @@ public class Log {
 				bufferAppendln(y--);
 			}
 		} else {
-			for (int i = board.getBoardSpace().length-1; i >= 0; --i){
+			for (int i = board.getBoardState().length-1; i >= 0; --i){
 				bufferAppend(y-i);
-				for (int j = board.getBoardSpace()[0].length-1; j >= 0; --j){
-					bufferAppend(board.getBoardSpace()[i][j]);
-					for (int k=0;k<((max-String.valueOf(board.getBoardSpace()[i][j]).length()));++k)	
+				for (int j = board.getBoardState()[0].length-1; j >= 0; --j){
+					bufferAppend(board.getBoardState()[i][j]);
+					for (int k=0;k<((max-String.valueOf(board.getBoardState()[i][j]).length()));++k)	
 						bufferAppend(" ");
 				}
 				bufferAppendln(y-i);

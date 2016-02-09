@@ -20,8 +20,6 @@ public class Location {
 		return (x == l.x && y == l.y);
 	}
 
-
-
 	@Override
 	public String toString(){
 		final String col = "ABCDEFGH";

@@ -52,17 +52,31 @@ class Move {
 		private Game game;
 		public Piece piece;
 		public Location dest;
-		private int rating;
+		private int rating, attackCount, protectCount;
 		
 		public Move(Game g, Piece p, Location d){
 			game = g;
 			piece = p;
 			dest = d;
 			rating = getRating();
+
+			attackCount = p.attackedPieces.size();
+			protectCount = p.protectedPieces.size();
+		}
+
+		public boolean canAttack(){
+			return (attackCount>0);
+		}
+
+		public boolean canBeCaptured(){
+			for (Piece p : piece.getOpponent().getPieceSet())
+				if ((p.getType().equals(Game.PieceType.PAWN) && p.canMove(dest) && dest.x != p.getLocation().x) ^ p.canMove(dest)) 
+					return true;
+			return false;
 		}
 
 		public boolean canFork(){
-			return false;
+			return (attackCount >= 2);
 		}
 
 		public boolean canSkewer(){

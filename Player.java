@@ -7,7 +7,7 @@ public class Player {
 	public boolean forfeit, draw;
 	private Game game;
 	private Board board;
-    private String[] cmdList = {"move", "get", "status", "forfeit", "help", "draw", "attack", "protect"};
+    private String[] cmdList = {"move", "get", "status", "forfeit", "help", "draw", "attack", "protect", "simPotential"};
     public boolean isHuman;
     private String name;
     public Team team;
@@ -23,7 +23,7 @@ public class Player {
     public void readTeamStatus(){
     	Game.gameLog.startBuffer();
     	for (Piece p : team.getPieceSet()){
-    		Game.gameLog.bufferAppend(p.getName()+" : "+p.getLocation()+" | ");
+    		Game.gameLog.bufferAppend(p+" : ");
     		Game.gameLog.bufferAppendArray(p.getMoves());
     	}
     	Game.gameLog.terminateBuffer();
@@ -96,6 +96,7 @@ public class Player {
 						return false;
 
 					case "status":
+						team.updateStatus();
 						readTeamStatus();
 						return false;
 
@@ -133,6 +134,19 @@ public class Player {
 						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
 						Game.gameLog.terminateBuffer();
 						return false;
+
+					case "getSim":
+						select = new Location(tokens[index++]);
+						Location dest = new Location(tokens[index++]);
+						if (board.getTile(select).getOccupator() != null){
+							Game.gameLog.startBuffer();
+							Game.gameLog.bufferAppend(board.getTile(select).getOccupator()+" > "+dest+": ");
+							Game.gameLog.bufferAppendArray(board.getTile(select).getOccupator().getSimulatedMoves(dest).toArray());
+							Game.gameLog.terminateBuffer();
+						}
+						else Game.gameLog.writeBuffer("No piece at selected location");
+	    				return false;
+
 				}
 			}
 			return false;
