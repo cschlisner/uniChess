@@ -97,13 +97,17 @@ public class Board {
 			return (occupator!=null && !occupator.getTeam().equals(p.getTeam()));
 		}
 
+		public boolean containsFriendly(Piece p){
+			return (occupator!=null && occupator.getTeam().equals(p.getTeam()));
+		}
+
 		public boolean available(Piece p){
 			return (occupator==null || !occupator.getTeam().equals(p.getTeam()));
 		}
 		public void setOccupator(Piece p){
 			occupator = p;
 		}
-		
+
 		public boolean attemptMove(Piece p){
 			if (occupator != null){
 				if (!occupator.getTeam().equals(p.getTeam())){

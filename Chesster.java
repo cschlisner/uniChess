@@ -50,67 +50,116 @@ public class Chesster {
 
 class Move {
 		private Game game;
+		private Board board;
+		
 		public Piece piece;
 		public Location dest;
+
+		private List<Location> potentialMoves;
+
 		private int rating, attackCount, protectCount;
 		
 		public Move(Game g, Piece p, Location d){
 			game = g;
+			board = g.getBoard();
 			piece = p;
 			dest = d;
+			
+			potentialMoves = p.getSimulatedMoves(d);
+			
+			attackCount = getAttackCount();
+			protectCount = getProtectCount();
+
 			rating = getRating();
 
-			attackCount = p.attackedPieces.size();
-			protectCount = p.protectedPieces.size();
 		}
 
-		public boolean canAttack(){
-			return (attackCount>0);
+		private int getAttackCount(){
+			int count = 0;
+			for (Location l : potentialMoves)
+				if (board.getTile(l).containsEnemy(piece))
+					++count;
+			return count;
+		}
+		private int getProtectCount(){
+			int count = 0;
+			for (Location l : potentialMoves)
+				if (board.getTile(l).containsFriendly(piece))
+					++count;
+			return count;
 		}
 
-		public boolean canBeCaptured(){
+		public int canAttack(){
+			if (attackCount>0)
+				return 20;
+			return 0;
+		}
+
+		public int canBeCaptured(){
 			for (Piece p : piece.getOpponent().getPieceSet())
 				if ((p.getType().equals(Game.PieceType.PAWN) && p.canMove(dest) && dest.x != p.getLocation().x) ^ p.canMove(dest)) 
-					return true;
-			return false;
+					return -20;
+			return 0;
 		}
 
-		public boolean canFork(){
-			return (attackCount >= 2);
+		public int canFork(){
+			return (attackCount >= 2)?20:0;
 		}
 
-		public boolean canSkewer(){
-			return false;
+		public int canSkewer(){
+			int wght = 0;
+			if ((piece.ofType(Game.PieceType.ROOK) || piece.ofType(Game.PieceType.BISHOP) || piece.ofType(Game.PieceType.QUEEN)) && attackCount > 0){
+				for (Location l : potentialMoves){
+					if (board.getTile(l).containsEnemy(piece)){
+
+						Piece tmp = board.getTile(l).getOccupator();
+
+						board.getTile(l).setOccupator(null); // remove piece that can be attacked from board
+
+						piece.update();						 // re-calculate valid moves
+
+						if (attackCount == piece.attackedPieces.size()) // if the amount of pieces this piece can attack stays constant, then there is a skewer
+							wght += 40;
+
+						board.getTile(l).setOccupator(tmp); // put the removed enemy back on the board.
+
+ 					}
+				}
+			}
+			return wght;
 		}
 
-		public boolean canBattery(){
-			return false;
+		public int canBattery(){
+			return 0;
 			
 		}
 
-		public boolean canDiscoverAttack(){
-			return false;
+		public int canDiscoverAttack(){
+			return 0;
 			
 		}
-		public boolean canUndermine(){
-			return false;
+		public int canUndermine(){
+			return 0;
 			
 		}
-		public boolean canOverload(){
-			return false;
+		public int canOverload(){
+			return 0;
 			
 		}
-		public boolean canDeflect(){
-			return false;
+		public int canDeflect(){
+			return 0;
 			
 		}
-		public boolean canPin(){
-			return false;
+		public int canPin(){
+			return 0;
 			
 		}
-		public boolean canInterfere(){
-			return false;
+		public int canInterfere(){
+			return 0;
 			
+		}
+		public int canProtect(){
+			return 0;
 		}
 
 		/**
@@ -121,8 +170,6 @@ class Move {
 		* @return move rating
 		*/
 		private int getRating(){
-			
-			// return (int) (methods true / total methods) * 100.0f
 
 			return 0;
 		}	
