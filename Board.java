@@ -69,6 +69,53 @@ public class Board {
 		return true;
 	}
 
+	/**
+	* This will accept a MoveSimulation object which is specified with a selection Location and a destination Location
+	* and will replace the occupator at the destination with the occupator at the selection, run the abstract method 
+	* getSimulationData() that is outlined when the MoveSimulation object is supplied, store the result (of Type T) 
+	* in a variable, then relocate the now switched occupators to their original locations. 
+	*
+	* This method will not account for valid moves. 
+	*
+	* @param MoveSimulation<T> m
+	* @return <T> result of m.getSimulation data after moveSimulation
+	*
+	*/
+	public <T> T runMoveSimulation(MoveSimulation<T> m){
+		if (m.dest.equals(m.select)) 
+			return m.getSimulationData();
+
+		Piece destinationPiece = getTile(m.dest).getOccupator();
+		Piece selectPiece = getTile(m.select).getOccupator();
+
+		getTile(m.dest).setOccupator(selectPiece);
+		getTile(m.select).setOccupator(null);
+
+		T returnVal =  m.getSimulationData();
+		
+		getTile(m.dest).setOccupator(destinationPiece);
+		getTile(m.select).setOccupator(selectPiece);
+
+		return returnVal;
+	}
+
+	public static abstract class MoveSimulation<T> {
+		public Location select;
+		public Location dest;
+		public Piece dataPiece;
+
+		public MoveSimulation(Location select, Location dest){
+			this.select = select;
+			this.dest = dest;
+		}
+		public MoveSimulation(Piece dataPiece, Location select, Location dest){
+			this.dataPiece = dataPiece;
+			this.select = select;
+			this.dest = dest;
+		}
+		public abstract T getSimulationData();
+	}
+
 	public class Tile {
 		private Piece occupator;
 		private Location locale;
@@ -98,7 +145,7 @@ public class Board {
 		}
 
 		public boolean containsFriendly(Piece p){
-			return (occupator!=null && occupator.getTeam().equals(p.getTeam()));
+			return (!locale.equals(p.getLocation()) && occupator!=null && occupator.getTeam().equals(p.getTeam()));
 		}
 
 		public boolean available(Piece p){

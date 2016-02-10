@@ -46,7 +46,7 @@ public class Piece {
 						int yDiff = (this.dir>0)?m.y-piece.location.y:piece.location.y-m.y; // v this.direction matters
 						int xDiff = Math.abs(m.x-piece.location.x);                    // h this.direction doesn't
 
-						if (yDiff == 1 && xDiff==1 && !t.available(piece) && !t.containsEnemy(piece))
+						if (yDiff == 1 && xDiff==1 && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 						
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
@@ -72,7 +72,7 @@ public class Piece {
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
-						if (!m.equals(piece.location) && board.cardinalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
+						if (!m.equals(piece.location) && board.cardinalLineOfSightClear(piece.location, m) && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 
@@ -96,7 +96,7 @@ public class Piece {
 						int yDiff = Math.abs(m.y-piece.location.y);
 						int xDiff = Math.abs(m.x-piece.location.x);
 
-						if (!m.equals(piece.location) && (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))) && !t.available(piece) && !t.containsEnemy(piece))
+						if (!m.equals(piece.location) && (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))) && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) 
 									piece.protectedPieces.add(t.getOccupator());
 						
@@ -120,7 +120,7 @@ public class Piece {
 					public boolean isValidMove(Location m){
 						t = board.getTile(m);
 
-						if (!m.equals(piece.location) && board.diagonalLineOfSightClear(piece.location, m) && !t.available(piece) && !t.containsEnemy(piece))
+						if (!m.equals(piece.location) && board.diagonalLineOfSightClear(piece.location, m) && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
@@ -143,7 +143,7 @@ public class Piece {
 						Board.Tile t = board.getTile(m);
 
 						if (!m.equals(piece.location) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)) 
-							&& !t.available(piece) && !t.containsEnemy(piece))
+							&& t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
@@ -168,7 +168,7 @@ public class Piece {
 						int xDiff = Math.abs(m.x-piece.location.x);
 
 						if (!m.equals(piece.location) && ((xDiff<2&&yDiff<2) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)))
-							 && !t.available(piece) && !t.containsEnemy(piece))
+							 && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
 						if (!m.equals(piece.location) && t.available(piece)){
@@ -328,20 +328,12 @@ public class Piece {
 	* @return whether this piece holds check when there is an enemy piece at this location. 
 	*/
 	public boolean canCheck(Piece movedPiece, Location simulatedEnemyLocation){
-		if (simulatedEnemyLocation.equals(location)) 
-			return false;
-
-		Piece original = board.getTile(simulatedEnemyLocation).getOccupator();
-
-		board.getTile(simulatedEnemyLocation).setOccupator(movedPiece);
-		board.getTile(movedPiece.location).setOccupator(null);
-
-		boolean res = hasCheck();
-		
-		board.getTile(simulatedEnemyLocation).setOccupator(original);
-		board.getTile(movedPiece.location).setOccupator(movedPiece);
-
-		return res;
+		return board.runMoveSimulation(new Board.MoveSimulation<Boolean>(this, movedPiece.getLocation(), simulatedEnemyLocation){
+			@Override
+			public Boolean getSimulationData(){
+				return dataPiece.hasCheck();
+			}
+		});
 	}
 
 	/**
@@ -361,7 +353,7 @@ public class Piece {
 			List<Location> potentialMoves = moveSet.getValidMoves();
 			
 			this.location = orgLoc;
-			
+
 			return potentialMoves;
 		}
 		
