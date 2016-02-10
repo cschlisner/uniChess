@@ -20,8 +20,11 @@ public class Piece {
 	
 	private Piece qscRook, kscRook;
 
+	public Piece defending;
+	public int attackerCount, defenderCount;
+
 	public List<Piece> attackedPieces, protectedPieces;
-	List<Location> moveList;
+	private List<Location> moveList;
 
 	public Piece(Game g, Team tm, Game.PieceType type, Game.Color c, int d, Location l){
 		game = g;
@@ -215,6 +218,21 @@ public class Piece {
 		attackedPieces.clear();
 		protectedPieces.clear();
 		moveList = moveSet.getValidMoves();
+
+		attackerCount = 0;
+		for (Piece p : getOpponent().getPieceSet())
+			if (!p.isDead() && p.attackedPieces.contains(this))
+				++attackerCount;
+
+		defenderCount = 0;
+		for (Piece p : team.getPieceSet()){
+			if (attackerCount>0 && !p.isDead() && p.protectedPieces.contains(this)){
+				++defenderCount;
+				p.defending = this;
+				continue;
+			}
+			p.defending = null;
+		}
 	}
 
 	public boolean moveTo(Location dest){

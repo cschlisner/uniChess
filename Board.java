@@ -85,17 +85,19 @@ public class Board {
 		if (m.dest.equals(m.select)) 
 			return m.getSimulationData();
 
-		Piece destinationPiece = getTile(m.dest).getOccupator();
+		Piece destinationPiece = (m.dest!=null)?getTile(m.dest).getOccupator():null;
 		Piece selectPiece = getTile(m.select).getOccupator();
 
-		getTile(m.dest).setOccupator(selectPiece);
+		if (m.dest!=null) getTile(m.dest).setOccupator(selectPiece);
 		getTile(m.select).setOccupator(null);
 
 		T returnVal =  m.getSimulationData();
 		
-		getTile(m.dest).setOccupator(destinationPiece);
+		if (m.dest!=null) getTile(m.dest).setOccupator(destinationPiece);
 		getTile(m.select).setOccupator(selectPiece);
 
+		if (m.dataPiece != null) m.dataPiece.update(); // refresh piece that might have been modified
+		
 		return returnVal;
 	}
 
