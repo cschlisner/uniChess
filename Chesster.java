@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Collections;
 
 public class Chesster {
 	
@@ -16,9 +17,12 @@ public class Chesster {
 	public Chesster(Game g, Team t){
 		team = t;
 		game = g;
+		currentMoves = new ArrayList<Move>();
 	} 
 
 	private void updateCurrentMoves(){
+		currentMoves.clear();
+
 		Map<Piece, List<Location>> moveMap = team.getAllMoves();
 		Iterator moveMapIterator = moveMap.keySet().iterator();
 
@@ -29,8 +33,7 @@ public class Chesster {
 		}
 	}
 
-	public boolean getBestMove(){
-		return false;
+	public String getBestMove(){
 		// sort currentMoves based upon ratings
 		//
 		// if 2 or more moves have the same rating (at top of list, meaning they are both the best possible move)
@@ -44,20 +47,41 @@ public class Chesster {
 		// the depth of play of the AI (how may moves ahead it calculates for) can be set by calculating for all of [m2] or [m3] 
 		// and not just the average scores. Then if there are still competing moves, averages for [m4] or [m5] will be calculated
 
+		updateCurrentMoves();
+
+		Collections.sort(currentMoves);
+
+		for (Move m : currentMoves)
+			System.out.println(m.toString() + " : "+m.rating+" | av: "+m.attackValue+"| pv: "+m.protectValue+"| id: "+m.isDefend()+"| ic: "+m.isCapture()+"| cu: "+m.canUndermine()+"| da: "+m.canDiscoverAttack()+"| cb: "+m.canBattery()+"| cs: "+m.canSkewer()+"| cbc:"+m.canBeCaptured());
+
+		// TODO:
+		// check for multiple 'best moves' [m1]
+		// create new Move list of potential moves for each 'best moves'[m1]
+		// sort this list of potentials [m2] and select the corresponding [m1] for the most valueable
+
+		return currentMoves.get(currentMoves.size()-1).toString();
 	}
 	
 }
 
-class Move {
+
+/*
+* TODO:
+* - Check whether move opens more moves for the piece and other pieces
+* - Check whether move closes moves for enemy
+* - Implement King moving strategies
+*/
+
+class Move implements Comparable<Move>{
 		private Game game;
 		private Board board;
 		
 		public Piece piece;
 		public Location dest;
 
-		private List<Location> potentialMoves;
+		public List<Location> potentialMoves;
 
-		private int rating, attackCount, protectCount;
+		public int rating, attackValue, protectValue, attackCount, protectCount;
 		
 		public Move(Game g, Piece p, Location d){
 			game = g;
@@ -67,50 +91,87 @@ class Move {
 			
 			potentialMoves = p.getSimulatedMoves(d);
 			
-			attackCount = getAttackCount();
-			protectCount = getProtectCount();
+			attackValue = getAttackValue();
+			protectValue = getProtectValue();
 
 			rating = getRating();
-
 		}
 
+		@Override 
+		public int compareTo(Move other){
+			return (this.rating > other.rating)?1:-1;
+		}
+
+		@Override
+		public String toString(){
+			return String.format("move %s %s", piece.getName(), dest);
+		}
 
 		/**
-		* Returns amount of attacks that can be made from dest
+		* Returns total value of attacks that can be made from dest
 		*/
-		private int getAttackCount(){
+		private int getAttackValue(){
+			attackCount = 0;
 			int count = 0;
-			for (Location l : potentialMoves)
-				if (board.getTile(l).containsEnemy(piece))
-					++count;
+			for (Location l : potentialMoves){
+				if (board.getTile(l).containsEnemy(piece)){
+					++attackCount;
+					count += board.getTile(l).getOccupator().value;
+				}
+			}
 			return count;
 		}
+		
 
 		/**
-		* Returns number of protects that are enabled from dest
+		* Returns total value of pieces that are protected from dest
 		*/
-		private int getProtectCount(){
+		private int getProtectValue(){
+			protectCount = 0;
 			int count = 0;
-			for (Location l : potentialMoves)
-				if (board.getTile(l).containsFriendly(piece))
-					++count;
+			for (Location l : potentialMoves){
+				if (board.getTile(l).containsFriendly(piece)){
+					++protectCount;
+					count += board.getTile(l).getOccupator().value;
+				}
+			}
 			return count;
+		}
+		
+		/**
+		* Returns total value of pieces that are defended by this move (recapture possible)
+		*/
+		public int isDefend(){
+			int wght = 0;
+			if (protectCount > 0){
+				for (Location l : potentialMoves){
+					if (board.getTile(l).containsFriendly(piece)){
+
+						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece.getLocation(), dest){
+							@Override
+							public Integer getSimulationData(){
+								board.getTile(select).getOccupator().update();
+								dataPiece.update();
+								return dataPiece.defenderCount;
+							}
+						});
+
+						int currentFriendDefendCount = board.getTile(l).getOccupator().defenderCount;
+
+						wght += (potentialFriendDefendCount - currentFriendDefendCount == 1)?board.getTile(l).getOccupator().value:0;
+					}
+				}
+			}
+			return wght;
 		}
 
 		/**
-		* Returns 50 'points' if this is move will caputre a piece
+		* Returns value of piece occupating destination tile if this is move will caputre the piece
 		*/
-		private int isCapture(){
+		public int isCapture(){
 			if (board.getTile(dest).containsEnemy(piece))
-				return 50;
+				return board.getTile(dest).getOccupator().value;
 			return 0;
-		}
-
-		/**
-		* Returns 20 'points' for each piece which can be attacked
-		*/
-		public int canAttack(){
-			return attackCount*20;
 		}
 
 		/**
@@ -118,29 +179,37 @@ class Move {
 		*/
 		public int canBeCaptured(){
 			for (Piece p : piece.getOpponent().getPieceSet())
-				if ((p.getType().equals(Game.PieceType.PAWN) && p.canMove(dest) && dest.x != p.getLocation().x) ^ p.canMove(dest)) 
-					return (-1 * (attackCount * 20)) + isCapture();
+				if ((p.getType().equals(Game.PieceType.PAWN) && 
+					board.runMoveSimulation(new Board.MoveSimulation<Boolean>(p, piece.getLocation(), dest){
+						@Override
+						public Boolean getSimulationData(){
+							dataPiece.update();
+							return dataPiece.canMove(dest);
+						}
+					}))	^ p.canMove(dest)){ // if the enemy piece is a pawn AND can caputure this move (hence the simulation) XOR the enemy piece can move here (a guaranteed capture)
+						return -1 * (attackValue + isCapture() + piece.value);
+					}
 			return 0;
 		}
 
 		/**
 		* In chess, a skewer is an attack upon two pieces in a line and is similar to a pin.
-		* This will return 10 points for every skewer. 
+		* This will return 4 points (average[ish] piece value) for every skewer. 
 		*/
 		public int canSkewer(){
 			int wght = 0;
-			if ((piece.ofType(Game.PieceType.ROOK) || piece.ofType(Game.PieceType.BISHOP) || piece.ofType(Game.PieceType.QUEEN)) && attackCount > 0){
+			if ((piece.ofType(Game.PieceType.ROOK) || piece.ofType(Game.PieceType.BISHOP) || piece.ofType(Game.PieceType.QUEEN)) && attackValue > 0){
 				for (Location l : potentialMoves){
 					if (board.getTile(l).containsEnemy(piece)){
 						if (attackCount == board.runMoveSimulation(new Board.MoveSimulation<Integer>(piece, l, null){ // remove piece that can be attacked from board
-							@Override
-							public Integer getSimulationData(){
-								dataPiece.update();					    // re-calculate attackedPieces list	 
-								return dataPiece.attackedPieces.size(); // return amount of attacks that can be made with the piece at l removed
-							}
-						}))
-							wght += 10;
-
+												@Override
+												public Integer getSimulationData(){
+													dataPiece.update();					    // re-calculate attackedPieces list	 
+													return dataPiece.attackedPieces.size(); // return amount of attacks that can be made with the piece at l removed
+												}
+											})){
+							wght += Piece.AVERAGE_PIECE_VAL;
+						}
  					}
 				}
 			}
@@ -149,7 +218,7 @@ class Move {
 
 		/**
 		* A battery in chess is a formation that consists of two or more pieces on the same rank, file, or diagonal.
-		* This will return 2 points if it is a battery.
+		* This will return 1 point if it is a battery.
 		*/
 		public int canBattery(){
 			for (int x = 0; x < 8; ++x){
@@ -158,7 +227,7 @@ class Move {
 						|| board.getTile(dest.x, y).containsFriendly(piece) // same rank
 						|| board.getTile(x, y).containsFriendly(piece) // y = x diagonal
 						|| board.getTile(x, 7-y).containsFriendly(piece)) // y = -x diagonal
-						return 2;
+						return 1;
 				}		
 			}
 			return 0;
@@ -188,42 +257,34 @@ class Move {
 														return tta;
 													}
 												});
-			return 20*attackDiff;
+			return Piece.AVERAGE_PIECE_VAL*attackDiff;
 		}
 		
 		/**
 		* Undermining is a chess tactic in which a defensive piece is captured, 
 		*leaving one of the opponent's pieces undefended or under-defended.
 		* 
-		* Will return 5 points if it leaves the defended piece under-defended 
-		* (more than one defender left) or 7 points if it leave the piece undefended
+		* Will return (average_piece_val / 2) points if it leaves the defended piece under-defended 
+		* (more than one defender left) or average_piece_val points if it leave the piece undefended
 		*/
 		public int canUndermine(){
 			int wght = 0;
 			if (isCapture()>0){
 				if (board.getTile(dest).getOccupator().defending != null){
-					wght += 5;
+					wght += Piece.AVERAGE_PIECE_VAL/2;
 					if (board.getTile(dest).getOccupator().defending.defenderCount == 1)
-						wght += 2;
+						wght += Piece.AVERAGE_PIECE_VAL/2;
 				}
 			}
 			return wght;
 		}
 
 		/**
-		* 
+		* idfk
 		*/
 		public int canOverload(){
+
 			return 0;
-			
-		}
-		
-		/**
-		* 
-		*/
-		public int canDeflect(){
-			return 0;
-			
 		}
 		
 		/**
@@ -231,7 +292,6 @@ class Move {
 		*/
 		public int canPin(){
 			return 0;
-			
 		}
 		
 		/**
@@ -239,15 +299,8 @@ class Move {
 		*/
 		public int canInterfere(){
 			return 0;
-			
 		}
 		
-		/**
-		* 
-		*/
-		public int canProtect(){
-			return 0;
-		}
 
 		/**
 		* Give a rating 0-100 to a this move based upon: 
@@ -257,7 +310,6 @@ class Move {
 		* @return move rating
 		*/
 		private int getRating(){
-
-			return 0;
+			return attackValue+protectValue+isCapture()+isDefend()+canUndermine()+canDiscoverAttack()+canBattery()+canSkewer()+canBeCaptured();
 		}	
 	}

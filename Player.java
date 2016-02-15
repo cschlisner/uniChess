@@ -3,6 +3,11 @@ package uniChess;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+
 public class Player {
 	public boolean forfeit, draw;
 	private Game game;
@@ -11,6 +16,7 @@ public class Player {
     public boolean isHuman;
     private String name;
     public Team team;
+    public Chesster chesster;
 
     public Player(Game game, String name, boolean yep, Game.Color c){
     	this.game = game;
@@ -18,14 +24,21 @@ public class Player {
     	this.name = name;
         isHuman = yep;
         team = new Team(game, c);
+
+        if (!isHuman)
+        	chesster = new Chesster(game, team);
     }
 
     public void readTeamStatus(){
     	Game.gameLog.startBuffer();
-    	for (Piece p : team.getPieceSet()){
-    		Game.gameLog.bufferAppend(p+" : ");
-    		Game.gameLog.bufferAppendArray(p.getMoves());
-    	}
+    	Map<Piece, List<Location>> moveMap = team.getAllMoves();
+		Iterator moveMapIterator = moveMap.keySet().iterator();
+
+		while (moveMapIterator.hasNext()){
+			Piece p = (Piece)moveMapIterator.next();
+			Game.gameLog.bufferAppend(p+" : ");
+    	 	Game.gameLog.bufferAppendArray(moveMap.get(p).toArray());
+		}
     	Game.gameLog.terminateBuffer();
     }
 
@@ -35,6 +48,12 @@ public class Player {
 
     public String getName(){
     	return name;
+    }
+
+    public String getBotMove(){
+    	String mv = chesster.getBestMove();
+    	Game.gameLog.writeBuffer(mv);
+    	return mv;
     }
 
     public boolean readMove(String inStr){

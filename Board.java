@@ -82,7 +82,7 @@ public class Board {
 	*
 	*/
 	public <T> T runMoveSimulation(MoveSimulation<T> m){
-		if (m.dest.equals(m.select)) 
+		if (m.dest != null && m.dest.equals(m.select)) 
 			return m.getSimulationData();
 
 		Piece destinationPiece = (m.dest!=null)?getTile(m.dest).getOccupator():null;
@@ -97,7 +97,7 @@ public class Board {
 		getTile(m.select).setOccupator(selectPiece);
 
 		if (m.dataPiece != null) m.dataPiece.update(); // refresh piece that might have been modified
-		
+
 		return returnVal;
 	}
 

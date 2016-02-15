@@ -79,7 +79,7 @@ public class Team {
         Map<Piece, List<Location>> movesList = new HashMap<Piece, List<Location>>();
 
     	for (Piece p : pieceSet)
-            if (!p.isDead() && p.getMoveList().size()>0)
+            if (p.getMoveList().size()>0)
     		  movesList.put(p, p.getMoveList());
 
         return movesList;

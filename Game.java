@@ -31,14 +31,14 @@ public class Game {
 
 		Random r = new Random();
 
-		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),p2Name.charAt(r.nextInt(p2Name.length()-1)),r.nextInt(9000)+1000);
+		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),((p2Name!=null)?p2Name.charAt(r.nextInt(p2Name.length()-1)):'c'),r.nextInt(9000)+1000);
 
 		board = new Board();
 
 		gameLog = new Log(this, imageOut, imageFileOut);
 
 		player1 = new Player(this, p1Name, true, Color.WHITE);
-		player2 = new Player(this, p2Name, true, Color.BLACK);
+		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster Bot", (p2Name!=null), Color.BLACK);
 
 		gameLog.logBoard();
 		gameLog.writeBuffer(String.format("New game started between %s and %s.", p1Name, p2Name));
@@ -133,6 +133,9 @@ public class Game {
 
 		gameLog.logBoard();
 		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
+
+		if (!getCurrentPlayer().isHuman)
+			input(getCurrentPlayer().getBotMove(), true);
 	}
 
 	public BufferedImage getBoardImage(){

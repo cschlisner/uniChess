@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Piece {
+
+	public static final int AVERAGE_PIECE_VAL = ((8*2)+(4*6)+(18)+(20))/16;
+
 	private Game game;
 	private Board board;
 	private Team team;
@@ -22,6 +25,7 @@ public class Piece {
 
 	public Piece defending;
 	public int attackerCount, defenderCount;
+	public int value;
 
 	public List<Piece> attackedPieces, protectedPieces;
 	private List<Location> moveList;
@@ -41,6 +45,7 @@ public class Piece {
 		switch(type){
 			case PAWN:
 				this.name = "Pawn";
+				this.value = 2;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9823:9817));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
@@ -70,6 +75,7 @@ public class Piece {
 				break;
 			case ROOK:
 				this.name = "Rook";
+				this.value = 10;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9820:9814));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
@@ -91,6 +97,7 @@ public class Piece {
 				break;
 			case KNIGHT:
 				this.name = "Knight";
+				this.value = 6;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9822:9816));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
@@ -117,6 +124,7 @@ public class Piece {
 				break;
 			case BISHOP:
 				this.name = "Bishop";
+				this.value = 6;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9821:9815));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
@@ -139,6 +147,7 @@ public class Piece {
 				break;
 			case QUEEN:
 				this.name = "Queen";
+				this.value = 18;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9819:9813));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
@@ -162,6 +171,7 @@ public class Piece {
 				break;
 			case KING:	
 				this.name = "King";
+				this.value = 20;
 				this.symbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9818:9812));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
