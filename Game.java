@@ -98,7 +98,7 @@ public class Game {
 		}
 
 		if (player1.draw && player2.draw){
-			endGame("Draw");
+			endGame(null, "Draw");
 			return;
 		}
 
@@ -118,17 +118,17 @@ public class Game {
 			gameLog.writeBuffer("You are in check!");
 
 		if (getDormantPlayer().getTeam().inCheckMate()){
-			endGame(getCurrentPlayer());
+			endGame(getCurrentPlayer(), "Checkmate");
 			return;
 		}
 
 		if (gameInStaleMate(getCurrentPlayer())){
-			endGame("Stalemate");
+			endGame(null, "Stalemate");
 			return;
 		}
 
 		if (getCurrentPlayer().forfeit){
-			endGame(getDormantPlayer());
+			endGame(getDormantPlayer(), "Forfeit");
 			return;
 		}
 
@@ -178,15 +178,11 @@ public class Game {
 		return (!p.getTeam().inCheck() && p.getTeam().getAllMoves().size()==0);
 	}
 
-	private static void endGame(String gameResult){
-		//gameLog.logBoard();
-		gameLog.writeBuffer("Game ended in "+gameResult);
-		dead = true;
-	}
-
-	private static void endGame(Player winner){
+	private static void endGame(Player winner, String result){
 		gameLog.logBoard();
-		gameLog.writeBuffer("\n"+((winner!=null)?(winner+" wins!"):"Game has reached Stalemate"));
+		gameLog.writeBuffer("Game ended in "+result);
+		if (winner != null) 
+			gameLog.writeBuffer(winner+" wins!");
 		dead = true;
 	}
 
