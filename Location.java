@@ -24,6 +24,6 @@ public class Location {
 	public String toString(){
 		final String col = "ABCDEFGH";
 		final String row = "12345678";
-		return String.format("%s%s",col.charAt(x),row.charAt(y));
+		return String.format("%c%c",col.charAt(x),row.charAt(y));
 	}
 }

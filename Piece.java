@@ -185,13 +185,21 @@ public class Piece {
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
 						if (!m.equals(piece.location) && t.available(piece)){
-	
+							
+							if (t.containsEnemy(piece) && t.getOccupator().defenderCount > 0)
+								return false;
+
 							// this will put the King into check, thus is not legal move
 							for (Piece p : piece.getOpponent().getPieceSet())
 									if ((p.ofType(Game.PieceType.KING) && Math.abs(m.y-p.location.y)==1 && Math.abs(m.y-p.location.y)==1) // if the king's isValidMove() is called, infinite loop will occur, so we check for it like this
 										||(p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m) && m.x != p.location.x) // pieces can move in front of a pawn even though it's a valid pawn move
 										||(!p.type.equals(Game.PieceType.KING) && !p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m))) 
 										return false;
+
+							/*
+							* TODO:
+							* add condition for king can't capture attacker when attacker is defended 
+							*/
 							
 	
 							// castling moves
@@ -200,11 +208,11 @@ public class Piece {
 								Location queenSideCastle = new Location(piece.location.x-2, m.y);
 	
 								if (m.equals(kingSideCastle)){
-									Piece tmp = board.getTile(kingSideCastle.x+(dir), m.y).getOccupator();
+									Piece tmp = board.getTile(7, m.y).getOccupator();
 									piece.kscRook = (tmp!=null && tmp.ofType(Game.PieceType.ROOK) && board.cardinalLineOfSightClear(piece.location, tmp.getLocation()) && tmp.getMovesMade().isEmpty())?tmp:null;
 								}
 								else if(m.equals(queenSideCastle)){
-									Piece tmp = board.getTile(queenSideCastle.x-2, m.y).getOccupator();
+									Piece tmp = board.getTile(0, m.y).getOccupator();
 									piece.qscRook = (tmp!=null && tmp.ofType(Game.PieceType.ROOK) && board.cardinalLineOfSightClear(piece.location, tmp.getLocation()) && tmp.getMovesMade().isEmpty())?tmp:null;
 								}
 								if (kscRook!=null || qscRook!=null)
@@ -385,7 +393,7 @@ public class Piece {
 			return potentialMoves;
 		}
 		
-		return null;
+		return new ArrayList<Location>();
 	}
 
 	private abstract class MoveSet {

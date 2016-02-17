@@ -120,7 +120,7 @@ public class Team {
         if (!getPiece(Game.PieceType.KING).getMoveList().isEmpty())
             return false;
 
-        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
+        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
             return true;
 
         return false;

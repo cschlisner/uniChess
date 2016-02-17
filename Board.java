@@ -105,16 +105,24 @@ public class Board {
 		public Location select;
 		public Location dest;
 		public Piece dataPiece;
+		public Location dataLocation;
 
 		public MoveSimulation(Location select, Location dest){
-			this.select = select;
-			this.dest = dest;
+			this(null, null, select, dest);
 		}
 		public MoveSimulation(Piece dataPiece, Location select, Location dest){
+			this(null, dataPiece, select, dest);
+		}
+		public MoveSimulation(Location dataLocation, Location select, Location dest){
+			this(dataLocation, null, select, dest);
+		}
+		public MoveSimulation(Location dataLocation, Piece dataPiece, Location select, Location dest){
+			this.dataLocation = dataLocation;
 			this.dataPiece = dataPiece;
 			this.select = select;
 			this.dest = dest;
 		}
+
 		public abstract T getSimulationData();
 	}
 

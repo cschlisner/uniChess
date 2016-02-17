@@ -18,6 +18,7 @@ public class Chesster {
 		team = t;
 		game = g;
 		currentMoves = new ArrayList<Move>();
+		updateCurrentMoves();
 	} 
 
 	private void updateCurrentMoves(){
@@ -51,28 +52,34 @@ public class Chesster {
 
 		Collections.sort(currentMoves);
 
-		for (Move m : currentMoves)
-			System.out.println(m.toString() + " : "+m.rating+" | av: "+m.attackValue+"| pv: "+m.protectValue+"| id: "+m.isDefend()+"| ic: "+m.isCapture()+"| cu: "+m.canUndermine()+"| da: "+m.canDiscoverAttack()+"| cb: "+m.canBattery()+"| cs: "+m.canSkewer()+"| cbc:"+m.canBeCaptured());
+		// for (Move m : currentMoves)
+		// 	System.out.println(m.toString() + " : "+m.rating+" | av: "+m.attackValue+"| pv: "+m.protectValue+"| id: "+m.isDefend()+"| ic: "+m.isCapture()+"| cu: "+m.canUndermine()+"| da: "+m.canDiscoverAttack()+"| cb: "+m.canBattery()+"| cs: "+m.canSkewer()+"| cbc:"+m.canBeCaptured());
 
-		// TODO:
-		// check for multiple 'best moves' [m1]
-		// create new Move list of potential moves for each 'best moves'[m1]
-		// sort this list of potentials [m2] and select the corresponding [m1] for the most valueable
+		Move bestMove = currentMoves.get(currentMoves.size()-1);
 
-		return currentMoves.get(currentMoves.size()-1).toString();
+		List<Move> M1 = new ArrayList<Move>();
+		for (Move m : currentMoves)				// check for multiple 'best moves' [m1]
+			if (m.rating == bestMove.rating)
+				M1.add(m);
+		if (!M1.isEmpty())
+			for (Move m : M1)
+				if (m.getAveragePotentialMoveRating() > bestMove.getAveragePotentialMoveRating())
+					bestMove = m;				// set the bestMove to the move with the highest average of potential move ratings
+
+		return bestMove.toString();
 	}
 	
-}
-
-
-/*
+	/*
 * TODO:
 * - Check whether move opens more moves for the piece and other pieces
 * - Check whether move closes moves for enemy
 * - Implement King moving strategies
+* - Pawn advancement
 */
 
-class Move implements Comparable<Move>{
+// Convert List<Location> potentialMoves to List<Move> and limit the amount of recursively generated objects to x generations depending on AI depth
+
+public static class Move implements Comparable<Move>{
 		private Game game;
 		private Board board;
 		
@@ -90,11 +97,45 @@ class Move implements Comparable<Move>{
 			dest = d;
 			
 			potentialMoves = p.getSimulatedMoves(d);
+
+			if (potentialMoves == null){
+				System.out.println(this.toString());
+			}
 			
 			attackValue = getAttackValue();
 			protectValue = getProtectValue();
 
 			rating = getRating();
+		}
+
+		//
+		// probably delete this 
+		//
+		public int getAveragePotentialMoveRating(){
+			List<Move> M2 = new ArrayList<Move>();
+
+			int avgPotentialRating = 0;
+
+			// calculating average of [M2]
+			for (Location potentialMoveLocation : potentialMoves){
+				Move potentialMove = 
+					board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
+						@Override
+						public Chesster.Move getSimulationData(){
+							return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
+						}
+					});
+
+				// to calculate for [M3]:
+				//  m2avgrating; 
+				//	for (Location potentialM3 : potentialMove.potentialMoves){
+				//	 Move potentialMoveM3 = run simulation( > generate move object)
+				//  }
+
+				avgPotentialRating += potentialMove.rating;
+			}
+
+			return (potentialMoves.size()>0)?(int)avgPotentialRating/potentialMoves.size():0;
 		}
 
 		@Override 
@@ -150,7 +191,7 @@ class Move implements Comparable<Move>{
 						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece.getLocation(), dest){
 							@Override
 							public Integer getSimulationData(){
-								board.getTile(select).getOccupator().update();
+								board.getTile(dest).getOccupator().update();
 								dataPiece.update();
 								return dataPiece.defenderCount;
 							}
@@ -312,4 +353,5 @@ class Move implements Comparable<Move>{
 		private int getRating(){
 			return attackValue+protectValue+isCapture()+isDefend()+canUndermine()+canDiscoverAttack()+canBattery()+canSkewer()+canBeCaptured();
 		}	
-	}
+	}	
+}

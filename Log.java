@@ -135,7 +135,9 @@ public class Log {
 			JSONObject gameSave = new JSONObject();
 
 			gameSave.put("player1", game.player1.getName());
+			gameSave.put("player1Human", game.player1.isHuman);
 			gameSave.put("player2", game.player2.getName());
+			gameSave.put("player2Human", game.player2.isHuman);
 			gameSave.put("imageOutput", imageOut);
 			if (exportImage)
 				gameSave.put("imageExportFile", imageExportFile);

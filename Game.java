@@ -31,18 +31,21 @@ public class Game {
 
 		Random r = new Random();
 
-		gameId = String.format("%c%c%d",p1Name.charAt(r.nextInt(p1Name.length()-1)),((p2Name!=null)?p2Name.charAt(r.nextInt(p2Name.length()-1)):'c'),r.nextInt(9000)+1000);
+		gameId = String.format("%c%c%d",((p1Name!=null)?p1Name.charAt(r.nextInt(p1Name.length()-1)):'C'), ((p2Name!=null)?p2Name.charAt(r.nextInt(p2Name.length()-1)):'C'), r.nextInt(9000)+1000);
 
 		board = new Board();
 
 		gameLog = new Log(this, imageOut, imageFileOut);
 
-		player1 = new Player(this, p1Name, true, Color.WHITE);
-		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster Bot", (p2Name!=null), Color.BLACK);
+		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster [W]", (p1Name!=null), Color.WHITE);
+		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster [B]", (p2Name!=null), Color.BLACK);
 
 		gameLog.logBoard();
 		gameLog.writeBuffer(String.format("New game started between %s and %s.", p1Name, p2Name));
 		if (!imageOut) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
+
+		getCurrentPlayer().getTeam().updateStatus();
+
 	}
 
 	public Game(String gameFile){
@@ -51,8 +54,8 @@ public class Game {
 		try {
 			JSONObject gameData = Log.importGame(gameFile);
 
-			player1 = new Player(this, gameData.getString("player1"), true, Color.WHITE);
-			player2 = new Player(this, gameData.getString("player2"), true, Color.BLACK);
+			player1 = new Player(this, gameData.getString("player1"), gameData.getBoolean("player1Human"), Color.WHITE);
+			player2 = new Player(this, gameData.getString("player2"), gameData.getBoolean("player2Human"), Color.BLACK);
 			
 			gameId = gameData.getString("id");
 
@@ -131,10 +134,11 @@ public class Game {
 
 		whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
 
+		getCurrentPlayer().readTeamStatus();
 		gameLog.logBoard();
 		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 
-		if (!getCurrentPlayer().isHuman)
+		if (!getCurrentPlayer().isHuman && logMove)
 			input(getCurrentPlayer().getBotMove(), true);
 	}
 
@@ -181,7 +185,7 @@ public class Game {
 	}
 
 	private static void endGame(Player winner){
-		//gameLog.logBoard();
+		gameLog.logBoard();
 		gameLog.writeBuffer("\n"+((winner!=null)?(winner+" wins!"):"Game has reached Stalemate"));
 		dead = true;
 	}
@@ -197,7 +201,7 @@ public class Game {
 	private void performMoves(List<String> moves){
 		if (moves != null){
 			for (String m : moves){
-				getInfoOutput();
+				//getInfoOutput();
 				input(m, false);
 			}
 		}

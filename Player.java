@@ -115,7 +115,6 @@ public class Player {
 						return false;
 
 					case "status":
-						team.updateStatus();
 						readTeamStatus();
 						return false;
 
