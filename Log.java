@@ -152,6 +152,7 @@ public class Log {
 			gameSave.write(writer);
 			writer.close();
 			writeBuffer("Game saved as '"+saveDir+"/"+game.getId()+".chess'");
+			System.out.println(getLastBuffer());
 			return true;
 		} catch(Exception e){
 			e.printStackTrace();

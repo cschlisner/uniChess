@@ -101,7 +101,7 @@ public class Player {
 	    						return false;
 							}
 	    				}
-	    				Game.gameLog.writeBuffer("Invalid move");
+	    				Game.gameLog.writeBuffer("Invalid move: '"+inStr+"'");
 	    				return false;
 
 					case "get":

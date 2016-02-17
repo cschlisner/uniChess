@@ -1,10 +1,11 @@
 package uniChess;
 
 import org.json.*;
-import java.util.Random;
 import java.util.List;
 import java.awt.image.*;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Game {
 	public static Log gameLog;
@@ -29,19 +30,20 @@ public class Game {
 	
 	public Game(String p1Name, String p2Name, boolean imageOut, String imageFileOut){
 
-		Random r = new Random();
+		Date now = new Date();
+		SimpleDateFormat sdf = new SimpleDateFormat("kms");
 
-		gameId = String.format("%c%c%d",((p1Name!=null)?p1Name.charAt(r.nextInt(p1Name.length()-1)):'C'), ((p2Name!=null)?p2Name.charAt(r.nextInt(p2Name.length()-1)):'C'), r.nextInt(9000)+1000);
+		gameId = String.format("%c%c%s",((p1Name!=null)?p1Name.charAt(0):'C'), ((p2Name!=null)?p2Name.charAt(0):'C'), sdf.format(now));
 
 		board = new Board();
 
 		gameLog = new Log(this, imageOut, imageFileOut);
 
-		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster [W]", (p1Name!=null), Color.WHITE);
-		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster [B]", (p2Name!=null), Color.BLACK);
+		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster", (p1Name!=null), Color.WHITE);
+		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster", (p2Name!=null), Color.BLACK);
 
 		gameLog.logBoard();
-		gameLog.writeBuffer(String.format("New game started between %s and %s.", p1Name, p2Name));
+		gameLog.writeBuffer(String.format("New game started between %s and %s.", player1, player2));
 		if (!imageOut) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 
 		getCurrentPlayer().getTeam().updateStatus();
@@ -114,8 +116,10 @@ public class Game {
 			gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input draw to accept.");
 		}
 
-		if (getDormantPlayer().getTeam().inCheck())
-			gameLog.writeBuffer("You are in check!");
+		if (getDormantPlayer().getTeam().inCheck()){
+			gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
+			getDormantPlayer().readTeamStatus();
+		}
 
 		if (getDormantPlayer().getTeam().inCheckMate()){
 			endGame(getCurrentPlayer(), "Checkmate");
@@ -134,7 +138,7 @@ public class Game {
 
 		whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
 
-		getCurrentPlayer().readTeamStatus();
+		// getCurrentPlayer().readTeamStatus();
 		gameLog.logBoard();
 		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 
