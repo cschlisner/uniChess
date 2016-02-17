@@ -87,7 +87,7 @@ public class Board {
 
 		Piece destinationPiece = (m.dest!=null)?getTile(m.dest).getOccupator():null;
 		Piece selectPiece = getTile(m.select).getOccupator();
-
+		
 		if (m.dest!=null) getTile(m.dest).setOccupator(selectPiece);
 		getTile(m.select).setOccupator(null);
 
@@ -104,6 +104,7 @@ public class Board {
 	public static abstract class MoveSimulation<T> {
 		public Location select;
 		public Location dest;
+
 		public Piece dataPiece;
 		public Location dataLocation;
 

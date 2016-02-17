@@ -198,7 +198,7 @@ public class Piece {
 
 							/*
 							* TODO:
-							* add condition for king can't capture attacker when attacker is defended 
+							* fix pawn logic
 							*/
 							
 	
@@ -317,6 +317,9 @@ public class Piece {
 	public Location getLocation(){
 		return location;
 	}
+	public Location getStartingPoint(){
+		return startPoint;
+	}
 	public Team getTeam(){
 		return team;
 	}
@@ -381,7 +384,7 @@ public class Piece {
 		if (simulatedPieceLocation.equals(location)) 
 			return moveList;
 
-		if (moveSet.isValidMove(simulatedPieceLocation)){
+		//if (moveSet.isValidMove(simulatedPieceLocation)){
 
 			Location orgLoc = this.location;
 			this.location = simulatedPieceLocation;
@@ -391,9 +394,9 @@ public class Piece {
 			this.location = orgLoc;
 
 			return potentialMoves;
-		}
+		//}
 		
-		return new ArrayList<Location>();
+		//return new ArrayList<Location>();
 	}
 
 	private abstract class MoveSet {

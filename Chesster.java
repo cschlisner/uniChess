@@ -8,15 +8,16 @@ import java.util.Iterator;
 import java.util.Collections;
 
 public class Chesster {
-	
+
 	private Game game;
 	private Team team;
 
 	private List<Move> currentMoves;
 
-	public Chesster(Game g, Team t){
+	public Chesster(Game g, Team t, int moveDepth){
 		team = t;
 		game = g;
+		Move.MoveDepth = moveDepth;
 		currentMoves = new ArrayList<Move>();
 		updateCurrentMoves();
 	} 
@@ -35,51 +36,33 @@ public class Chesster {
 	}
 
 	public String getBestMove(){
-		// sort currentMoves based upon ratings
-		//
-		// if 2 or more moves have the same rating (at top of list, meaning they are both the best possible move)
-		// then for each of those moves (m1), make a new list of Move objects representing
-		// the possible moves (m2) for the piece if m1 was chosen. Then get the average rating for [m2]
-		// and return the m1 with the highest average rating of [m2] moves.
-		//
-		// If you still have two competing "best moves" with the same average rating of [m2] 
-		// then repeat the process for a set of [m3]
-		//
-		// the depth of play of the AI (how may moves ahead it calculates for) can be set by calculating for all of [m2] or [m3] 
-		// and not just the average scores. Then if there are still competing moves, averages for [m4] or [m5] will be calculated
 
 		updateCurrentMoves();
 
 		Collections.sort(currentMoves);
 
 		// for (Move m : currentMoves)
-		// 	System.out.println(m.toString() + " : "+m.rating+" | av: "+m.attackValue+"| pv: "+m.protectValue+"| id: "+m.isDefend()+"| ic: "+m.isCapture()+"| cu: "+m.canUndermine()+"| da: "+m.canDiscoverAttack()+"| cb: "+m.canBattery()+"| cs: "+m.canSkewer()+"| cbc:"+m.canBeCaptured());
+		// 	System.out.println(m.toString() + " : "+m.rating+" | apmr: "+m.apmr);
 
 		Move bestMove = currentMoves.get(currentMoves.size()-1);
-
-		List<Move> M1 = new ArrayList<Move>();
-		for (Move m : currentMoves)				// check for multiple 'best moves' [m1]
-			if (m.rating == bestMove.rating)
-				M1.add(m);
-		if (!M1.isEmpty())
-			for (Move m : M1)
-				if (m.getAveragePotentialMoveRating() > bestMove.getAveragePotentialMoveRating())
-					bestMove = m;				// set the bestMove to the move with the highest average of potential move ratings
 
 		return bestMove.toString();
 	}
 	
 	/*
-* TODO:
-* - Check whether move opens more moves for the piece and other pieces
-* - Check whether move closes moves for enemy
-* - Implement King moving strategies
-* - Pawn advancement
-*/
+	* TODO:
+	* - Check whether move opens more moves for the piece and other pieces
+	* - Check whether move closes moves for enemy
+	* - Implement King moving strategies
+	* - Pawn advancement
+	*/
 
 // Convert List<Location> potentialMoves to List<Move> and limit the amount of recursively generated objects to x generations depending on AI depth
 
 public static class Move implements Comparable<Move>{
+
+		public static int MoveDepth = 1;
+
 		private Game game;
 		private Board board;
 		
@@ -88,7 +71,7 @@ public static class Move implements Comparable<Move>{
 
 		public List<Location> potentialMoves;
 
-		public int rating, attackValue, protectValue, attackCount, protectCount;
+		public int rating, attackValue, protectValue, attackCount, protectCount, apmr, skval;
 		
 		public Move(Game g, Piece p, Location d){
 			game = g;
@@ -108,39 +91,48 @@ public static class Move implements Comparable<Move>{
 			rating = getRating();
 		}
 
-		//
-		// probably delete this 
-		//
-		public int getAveragePotentialMoveRating(){
-			List<Move> M2 = new ArrayList<Move>();
+		public int getAveragePotentialMoveRating(int depth){
+			// System.out.println("enter gapmr depth = "+depth+" | "+String.format("%s@%s > %s", piece.getName(), piece.getStartingPoint(), dest));
+			// End of depth, return the average rating of all potential moves
+			if (depth == 0){
+				int avgPotentialRating = 0;
+				for (Location potentialMoveLocation : potentialMoves){
+					Move potentialMove = 
+						board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
+							@Override
+							public Chesster.Move getSimulationData(){
+								return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
+							}
+						});
 
-			int avgPotentialRating = 0;
-
-			// calculating average of [M2]
-			for (Location potentialMoveLocation : potentialMoves){
-				Move potentialMove = 
-					board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
-						@Override
-						public Chesster.Move getSimulationData(){
-							return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
-						}
-					});
-
-				// to calculate for [M3]:
-				//  m2avgrating; 
-				//	for (Location potentialM3 : potentialMove.potentialMoves){
-				//	 Move potentialMoveM3 = run simulation( > generate move object)
-				//  }
-
-				avgPotentialRating += potentialMove.rating;
+					avgPotentialRating += potentialMove.rating;
+				}
+				return (potentialMoves.size()>0)?(int)avgPotentialRating/potentialMoves.size():0;
 			}
 
-			return (potentialMoves.size()>0)?(int)avgPotentialRating/potentialMoves.size():0;
+			// return the average of the averages gathered from potential move trees (generate a new Move for each potential move, then call this function on it and average the results)
+			else {
+				int avgPotentialTreeAverage = 0;
+
+				int remainingDepth = depth - 1;
+				
+				for (Location potentialMoveLocation : potentialMoves){
+					avgPotentialTreeAverage += board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
+													@Override
+													public Chesster.Move getSimulationData(){
+														return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
+													}
+												}).getAveragePotentialMoveRating(remainingDepth);			
+				}
+
+				apmr = (potentialMoves.size()>0)?(int)avgPotentialTreeAverage/potentialMoves.size():0;
+				return apmr;
+			}
 		}
 
 		@Override 
 		public int compareTo(Move other){
-			return (this.rating > other.rating)?1:-1;
+			return (this.getAveragePotentialMoveRating(Move.MoveDepth) > other.getAveragePotentialMoveRating(Move.MoveDepth))?1:-1;
 		}
 
 		@Override
@@ -191,8 +183,7 @@ public static class Move implements Comparable<Move>{
 						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece.getLocation(), dest){
 							@Override
 							public Integer getSimulationData(){
-								board.getTile(dest).getOccupator().update();
-								dataPiece.update();
+								dataPiece.getTeam().updateStatus();
 								return dataPiece.defenderCount;
 							}
 						});
@@ -228,7 +219,7 @@ public static class Move implements Comparable<Move>{
 							return dataPiece.canMove(dest);
 						}
 					}))	^ p.canMove(dest)){ // if the enemy piece is a pawn AND can caputure this move (hence the simulation) XOR the enemy piece can move here (a guaranteed capture)
-						return -1 * (attackValue + isCapture() + piece.value);
+						return -1 * (attackValue + isCapture() + piece.value + skval);
 					}
 			return 0;
 		}
@@ -254,6 +245,7 @@ public static class Move implements Comparable<Move>{
  					}
 				}
 			}
+			skval = wght;
 			return wght;
 		}
 

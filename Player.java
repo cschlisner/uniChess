@@ -26,7 +26,7 @@ public class Player {
         team = new Team(game, c);
 
         if (!isHuman)
-        	chesster = new Chesster(game, team);
+        	chesster = new Chesster(game, team, 3);
     }
 
     public void readTeamStatus(){
