@@ -192,14 +192,9 @@ public class Piece {
 							// this will put the King into check, thus is not legal move
 							for (Piece p : piece.getOpponent().getPieceSet())
 									if ((p.ofType(Game.PieceType.KING) && Math.abs(m.y-p.location.y)==1 && Math.abs(m.y-p.location.y)==1) // if the king's isValidMove() is called, infinite loop will occur, so we check for it like this
-										||(p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m) && m.x != p.location.x) // pieces can move in front of a pawn even though it's a valid pawn move
-										||(!p.type.equals(Game.PieceType.KING) && !p.type.equals(Game.PieceType.PAWN) && p.moveSet.isValidMove(m))) 
+										^ (p.type.equals(Game.PieceType.PAWN) && Math.abs(m.x-p.location.x)==1 && m.y-p.location.y==-dir) // pieces can move in front of a pawn even though it's a valid pawn move
+										^ (p.moveSet.isValidMove(m))) 
 										return false;
-
-							/*
-							* TODO:
-							* fix pawn logic
-							*/
 							
 	
 							// castling moves
@@ -428,6 +423,6 @@ public class Piece {
 
 	@Override
 	public String toString(){
-		return symbol+"|"+location;
+		return name+"|"+location;
 	}
 }
