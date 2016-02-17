@@ -86,17 +86,23 @@ public class Board {
 			return m.getSimulationData();
 
 		Piece destinationPiece = (m.dest!=null)?getTile(m.dest).getOccupator():null;
-		Piece selectPiece = getTile(m.select).getOccupator();
-		
-		if (m.dest!=null) getTile(m.dest).setOccupator(selectPiece);
-		getTile(m.select).setOccupator(null);
+		if (m.selectPiece == null) m.selectPiece = getTile(m.select).getOccupator();
 
-		T returnVal =  m.getSimulationData();
-		
-		if (m.dest!=null) getTile(m.dest).setOccupator(destinationPiece);
-		getTile(m.select).setOccupator(selectPiece);
+		if (m.dest != null)
+			m.selectPiece.setLocation(m.dest); // sets it's current location to m.dest, the previous location occupator to null, and the occupator at m.dest to the piece
+		else 
+			m.selectPiece.kill(); // sets location to null and removes it from board / team
 
-		if (m.dataPiece != null) m.dataPiece.update(); // refresh piece that might have been modified
+		T returnVal =  m.getSimulationData(); // do stuff
+		
+		m.selectPiece.setLocation(m.select); // move the piece back to the correct position on board
+		
+		if (m.dest == null) // we killed the moving piece so we need to re add it to the team
+			m.selectPiece.getTeam().getPieceSet().add(m.selectPiece);
+
+		else if (destinationPiece != null) destinationPiece.setLocation(m.dest); // we moved the moving piece so we need to replace the piece it removed
+
+		m.selectPiece.getTeam().updateStatus(); // refresh piece team that might have been modified
 
 		return returnVal;
 	}
@@ -105,17 +111,29 @@ public class Board {
 		public Location select;
 		public Location dest;
 
-		public Piece dataPiece;
+		public Piece dataPiece, selectPiece;
 		public Location dataLocation;
 
 		public MoveSimulation(Location select, Location dest){
 			this(null, null, select, dest);
 		}
+		public MoveSimulation(Piece selectPiece, Location dest){
+			this(null, null, selectPiece.getLocation(), dest);
+			this.selectPiece = selectPiece;
+		}
 		public MoveSimulation(Piece dataPiece, Location select, Location dest){
 			this(null, dataPiece, select, dest);
 		}
+		public MoveSimulation(Piece dataPiece, Piece selectPiece, Location dest){
+			this(null, dataPiece, selectPiece.getLocation(), dest);
+			this.selectPiece = selectPiece;
+		}
 		public MoveSimulation(Location dataLocation, Location select, Location dest){
 			this(dataLocation, null, select, dest);
+		}
+		public MoveSimulation(Location dataLocation, Piece selectPiece, Location dest){
+			this(dataLocation, null, selectPiece.getLocation(), dest);
+			this.selectPiece = selectPiece;
 		}
 		public MoveSimulation(Location dataLocation, Piece dataPiece, Location select, Location dest){
 			this.dataLocation = dataLocation;

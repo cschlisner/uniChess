@@ -75,15 +75,27 @@ public class Team {
     	return null;
     }
 
-    public Map<Piece, List<Location>> getAllMoves(){
-        Map<Piece, List<Location>> movesList = new HashMap<Piece, List<Location>>();
+    public Map<Piece, List<Location>> getMoveMap(){
+        Map<Piece, List<Location>> moveMap = new HashMap<Piece, List<Location>>();
 
     	for (Piece p : pieceSet)
             if (p.getMoveList().size()>0)
-    		  movesList.put(p, p.getMoveList());
+    		  moveMap.put(p, p.getMoveList());
 
-        return movesList;
+        return moveMap;
     }
+
+    public List<Move> getMoveList(){
+        List<Move> moveList = new ArrayList<Move>();
+
+        for (Piece p : pieceSet)
+            if (p.getMoveList().size()>0)
+              for (Location l : p.getMoveList())
+                moveList.add(new Move(game, p, l));
+
+        return moveList;
+    }
+
 
     public void updateStatus(){
         attackers = updateAttackers();
@@ -120,7 +132,7 @@ public class Team {
         if (!getPiece(Game.PieceType.KING).getMoveList().isEmpty())
             return false;
 
-        if ((pieceSet.size() == 1 && getAllMoves().size()==0) || (checked && getAllMoves().size()==0) || (checked && checkedMoves.isEmpty()))
+        if ((pieceSet.size() == 1 && getMoveMap().size()==0) || (checked && getMoveMap().size()==0) || (checked && checkedMoves.isEmpty()))
             return true;
 
         return false;

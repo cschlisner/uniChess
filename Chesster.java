@@ -3,6 +3,9 @@ package uniChess;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Collections;
@@ -12,26 +15,26 @@ public class Chesster {
 	private Game game;
 	private Team team;
 
-	private List<Move> currentMoves;
+	private List<SmartMove> currentMoves;
 
 	public Chesster(Game g, Team t, int moveDepth){
 		team = t;
 		game = g;
-		Move.MoveDepth = moveDepth;
-		currentMoves = new ArrayList<Move>();
+		SmartMove.MoveDepth = moveDepth;
+		currentMoves = new ArrayList<SmartMove>();
 		updateCurrentMoves();
 	} 
 
 	private void updateCurrentMoves(){
 		currentMoves.clear();
 
-		Map<Piece, List<Location>> moveMap = team.getAllMoves();
+		Map<Piece, List<Location>> moveMap = team.getMoveMap();
 		Iterator moveMapIterator = moveMap.keySet().iterator();
 
 		while (moveMapIterator.hasNext()){
 			Piece p = (Piece)moveMapIterator.next();
 			for (Location l : moveMap.get(p))
-				currentMoves.add(new Move(game, p, l));
+				currentMoves.add(new SmartMove(game, p, l));
 		}
 	}
 
@@ -41,10 +44,10 @@ public class Chesster {
 
 		Collections.sort(currentMoves);
 
-		// for (Move m : currentMoves)
+		// for (SmartMove m : currentMoves)
 		// 	System.out.println(m.toString() + " : "+m.rating+" | apmr: "+m.apmr);
 
-		Move bestMove = currentMoves.get(currentMoves.size()-1);
+		SmartMove bestMove = currentMoves.get(currentMoves.size()-1);
 
 		return bestMove.toString();
 	}
@@ -59,25 +62,28 @@ public class Chesster {
 
 // Convert List<Location> potentialMoves to List<Move> and limit the amount of recursively generated objects to x generations depending on AI depth
 
-public static class Move implements Comparable<Move>{
+public static class SmartMove extends Move implements Comparable<SmartMove>{
 
 		public static int MoveDepth = 1;
-
-		private Game game;
-		private Board board;
-		
-		public Piece piece;
-		public Location dest;
 
 		public List<Location> potentialMoves;
 
 		public int rating, attackValue, protectValue, attackCount, protectCount, apmr, skval;
 		
-		public Move(Game g, Piece p, Location d){
-			game = g;
-			board = g.getBoard();
-			piece = p;
-			dest = d;
+		public SmartMove(Move m){
+			this(m.game, m.piece, m.dest, true);
+		}
+		public SmartMove(Move m, boolean gtmdv){
+			this(m.game, m.piece, m.dest, gtmdv);
+		}
+
+		public SmartMove(Game g, Piece p, Location d){
+			this(g, p, d, true);
+		}
+
+		// gtdv = getTeamDiffValue, if this is specified as true then the getTeamMoveDiffValue() will run (recursively)
+		public SmartMove(Game g, Piece p, Location d, Boolean gtmdv){
+			super(g,p,d);
 			
 			potentialMoves = p.getSimulatedMoves(d);
 
@@ -88,7 +94,7 @@ public static class Move implements Comparable<Move>{
 			attackValue = getAttackValue();
 			protectValue = getProtectValue();
 
-			rating = getRating();
+			rating = attackValue+protectValue+isCapture()+isDefend()+canUndermine()+canDiscoverAttack()+canBattery()+canSkewer()+canBeCaptured()+(gtmdv?getTeamMoveDiffValue():0);
 		}
 
 		public int getAveragePotentialMoveRating(int depth){
@@ -97,11 +103,11 @@ public static class Move implements Comparable<Move>{
 			if (depth == 0){
 				int avgPotentialRating = 0;
 				for (Location potentialMoveLocation : potentialMoves){
-					Move potentialMove = 
-						board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
+					SmartMove potentialMove = 
+						board.runMoveSimulation(new Board.MoveSimulation<Chesster.SmartMove>(potentialMoveLocation, piece, dest){
 							@Override
-							public Chesster.Move getSimulationData(){
-								return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
+							public Chesster.SmartMove getSimulationData(){
+								return new Chesster.SmartMove(game, selectPiece, dataLocation, false);
 							}
 						});
 
@@ -117,12 +123,12 @@ public static class Move implements Comparable<Move>{
 				int remainingDepth = depth - 1;
 				
 				for (Location potentialMoveLocation : potentialMoves){
-					avgPotentialTreeAverage += board.runMoveSimulation(new Board.MoveSimulation<Chesster.Move>(potentialMoveLocation, piece.getLocation(), dest){
+					avgPotentialTreeAverage += board.runMoveSimulation(new Board.MoveSimulation<Chesster.SmartMove>(potentialMoveLocation, piece, dest){
 													@Override
-													public Chesster.Move getSimulationData(){
-														return new Chesster.Move(game, board.getTile(dest).getOccupator(), dataLocation);
+													public Chesster.SmartMove getSimulationData(){
+														return new Chesster.SmartMove(game, selectPiece, dataLocation, false);
 													}
-												}).getAveragePotentialMoveRating(remainingDepth);			
+												}).getAveragePotentialMoveRating(remainingDepth);
 				}
 
 				apmr = (potentialMoves.size()>0)?(int)avgPotentialTreeAverage/potentialMoves.size():0;
@@ -131,8 +137,8 @@ public static class Move implements Comparable<Move>{
 		}
 
 		@Override 
-		public int compareTo(Move other){
-			return (this.getAveragePotentialMoveRating(Move.MoveDepth) > other.getAveragePotentialMoveRating(Move.MoveDepth))?1:-1;
+		public int compareTo(SmartMove other){
+			return (this.getAveragePotentialMoveRating(SmartMove.MoveDepth) > other.getAveragePotentialMoveRating(SmartMove.MoveDepth))?1:-1;
 		}
 
 		@Override
@@ -170,6 +176,92 @@ public static class Move implements Comparable<Move>{
 			}
 			return count;
 		}
+
+		/*
+		* Returns the total rating of moves gained [positive] or lost [negative] for the team 
+		*/
+		private int getTeamMoveDiffValue(){
+			System.out.println(String.format("calculating team move diff for %s > %s", piece, dest));
+
+			List<Move> currentTeamMoves = piece.getTeam().getMoveList();
+
+			//////////////////////////////////////////////////////////////////
+			// System.out.println("Current Team moves:");
+			// printMoveList(currentTeamMoves);
+			// System.out.println("_______________");
+			//////////////////////////////////////////////////////////////////
+
+			List<Move> potentialTeamMoves = board.runMoveSimulation(new Board.MoveSimulation<List<Move>>(piece, dest){
+													@Override
+													public List<Move> getSimulationData(){
+														selectPiece.getTeam().updateStatus();
+														return selectPiece.getTeam().getMoveList();
+													}
+												});
+
+			//////////////////////////////////////////////////////////////////
+			// System.out.println("Potential Team moves:");
+			// printMoveList(potentialTeamMoves); 
+			//System.out.println("_______________");
+			//////////////////////////////////////////////////////////////////
+
+			Set<Move> teamMovesLoss = new HashSet<Move>(currentTeamMoves);
+			List<Move> meme = new ArrayList<Move>();
+			Iterator lmapIterator = teamMovesLoss.iterator();
+			while (lmapIterator.hasNext()){
+				Move m = (Move)lmapIterator.next();
+				if (potentialTeamMoves.contains(m))
+					meme.add(m);
+			}
+			teamMovesLoss.removeAll(meme);
+
+			//////////////////////////////////////////////////////////////////
+			// System.out.println("Team moves loss:");
+			// printMoveSet(teamMovesLoss);
+			//System.out.println("_______________");
+			//////////////////////////////////////////////////////////////////
+
+			Set<Move> teamMovesGain = new HashSet<Move>(potentialTeamMoves);
+			teamMovesGain.removeAll(currentTeamMoves);	 // now contains all moves newly available for the team if this move is acted out
+
+			//////////////////////////////////////////////////////////////////
+			// System.out.println("Team moves gain:");
+			// printMoveSet(teamMovesGain);
+			//System.out.println("_______________");
+			//////////////////////////////////////////////////////////////////
+
+			int totalRatingLoss = 0, totalRatingGain = 0;
+
+			Iterator mapIterator = teamMovesLoss.iterator();
+			while (mapIterator.hasNext()){
+				Move m = (Move)mapIterator.next();
+				totalRatingLoss += new SmartMove(m, false).rating;
+			}
+
+			mapIterator = teamMovesGain.iterator();
+			while (mapIterator.hasNext()){
+				Move m = (Move)mapIterator.next();
+				totalRatingGain += new SmartMove(m, false).rating;
+			}
+
+			//System.out.println(String.format("Loss: %s | Gain: %s | Total: %s", totalRatingLoss, totalRatingGain, totalRatingGain-totalRatingLoss));
+
+			// System.exit(0);
+			return totalRatingGain-totalRatingLoss;
+		}
+
+		private void printMoveList(List<Move> list){
+			for (Move m : list){
+				System.out.println(m.piece+" : "+m.dest);
+	    	 }
+		}
+		private void printMoveSet(Set<Move> set){
+			Iterator mapIterator = set.iterator();
+			while (mapIterator.hasNext()){
+				Move m = (Move)mapIterator.next();
+				System.out.println(m.piece+" : "+m.dest);
+			}
+		}
 		
 		/**
 		* Returns total value of pieces that are defended by this move (recapture possible)
@@ -180,7 +272,7 @@ public static class Move implements Comparable<Move>{
 				for (Location l : potentialMoves){
 					if (board.getTile(l).containsFriendly(piece)){
 
-						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece.getLocation(), dest){
+						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece, dest){
 							@Override
 							public Integer getSimulationData(){
 								dataPiece.getTeam().updateStatus();
@@ -212,7 +304,7 @@ public static class Move implements Comparable<Move>{
 		public int canBeCaptured(){
 			for (Piece p : piece.getOpponent().getPieceSet())
 				if ((p.getType().equals(Game.PieceType.PAWN) && 
-					board.runMoveSimulation(new Board.MoveSimulation<Boolean>(p, piece.getLocation(), dest){
+					board.runMoveSimulation(new Board.MoveSimulation<Boolean>(p, piece, dest){
 						@Override
 						public Boolean getSimulationData(){
 							dataPiece.update();
@@ -278,15 +370,15 @@ public static class Move implements Comparable<Move>{
 				totalTeamAttacks += p.attackedPieces.size();
 			totalTeamAttacks -= piece.attackedPieces.size();
 
-			int attackDiff = totalTeamAttacks - board.runMoveSimulation(new Board.MoveSimulation<Integer>(piece, piece.getLocation(), dest){
+			int attackDiff = totalTeamAttacks - board.runMoveSimulation(new Board.MoveSimulation<Integer>(piece, dest){
 													@Override
 													public Integer getSimulationData(){
 														int tta = 0;
 
-														for (Piece p : dataPiece.getTeam().getPieceSet())
+														for (Piece p : selectPiece.getTeam().getPieceSet())
 															tta += p.attackedPieces.size();
 
-														tta -= dataPiece.attackedPieces.size();
+														tta -= selectPiece.attackedPieces.size();
 														return tta;
 													}
 												});
@@ -333,17 +425,5 @@ public static class Move implements Comparable<Move>{
 		public int canInterfere(){
 			return 0;
 		}
-		
-
-		/**
-		* Give a rating 0-100 to a this move based upon: 
-		* forks, skewers, batteries, discovered attacks, undermining, overloading, deflection, pins, or interference
-		* depending on the difficulty
-		*
-		* @return move rating
-		*/
-		private int getRating(){
-			return attackValue+protectValue+isCapture()+isDefend()+canUndermine()+canDiscoverAttack()+canBattery()+canSkewer()+canBeCaptured();
-		}	
 	}	
 }

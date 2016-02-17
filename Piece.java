@@ -82,7 +82,9 @@ public class Piece {
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
 						if (!m.equals(piece.location) && board.cardinalLineOfSightClear(piece.location, m) && t.containsFriendly(piece))
-								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
+								if (!protectedPieces.contains(t.getOccupator())) 
+									piece.protectedPieces.add(t.getOccupator());
+
 						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
 
 							if (t.available(piece) && board.cardinalLineOfSightClear(piece.location, m)){
@@ -193,7 +195,7 @@ public class Piece {
 							for (Piece p : piece.getOpponent().getPieceSet())
 									if ((p.ofType(Game.PieceType.KING) && Math.abs(m.y-p.location.y)==1 && Math.abs(m.y-p.location.y)==1) // if the king's isValidMove() is called, infinite loop will occur, so we check for it like this
 										^ (p.type.equals(Game.PieceType.PAWN) && Math.abs(m.x-p.location.x)==1 && m.y-p.location.y==-dir) // pieces can move in front of a pawn even though it's a valid pawn move
-										^ (p.moveSet.isValidMove(m))) 
+										^ (!p.ofType(Game.PieceType.KING) && !p.ofType(Game.PieceType.PAWN) && p.moveSet.isValidMove(m))) 
 										return false;
 							
 	
@@ -285,8 +287,10 @@ public class Piece {
 
 	public void setLocation(Location loc){
 		board.getTile(location).setOccupator(null);
-		if (loc != null)
+		if (loc != null){
+			board.getTile(loc).setOccupator(this);
 			location = loc;
+		}
 	}
 
 	public boolean moveTo(int x, int y){

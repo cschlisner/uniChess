@@ -118,7 +118,7 @@ public class Game {
 
 		if (getDormantPlayer().getTeam().inCheck()){
 			gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
-			
+
 			getDormantPlayer().readTeamStatus();
 		}
 
@@ -180,7 +180,7 @@ public class Game {
 	}
 
 	private static boolean gameInStaleMate(Player p){
-		return (!p.getTeam().inCheck() && p.getTeam().getAllMoves().size()==0);
+		return (!p.getTeam().inCheck() && p.getTeam().getMoveMap().size()==0);
 	}
 
 	private static void endGame(Player winner, String result){

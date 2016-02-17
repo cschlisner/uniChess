@@ -31,7 +31,7 @@ public class Player {
 
     public void readTeamStatus(){
     	Game.gameLog.startBuffer();
-    	Map<Piece, List<Location>> moveMap = team.getAllMoves();
+    	Map<Piece, List<Location>> moveMap = team.getMoveMap();
 		Iterator moveMapIterator = moveMap.keySet().iterator();
 
 		while (moveMapIterator.hasNext()){
