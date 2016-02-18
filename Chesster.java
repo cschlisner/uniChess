@@ -138,7 +138,7 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 
 		@Override 
 		public int compareTo(SmartMove other){
-			return (this.getAveragePotentialMoveRating(SmartMove.MoveDepth) > other.getAveragePotentialMoveRating(SmartMove.MoveDepth))?1:-1;
+			return (this.getAveragePotentialMoveRating(SmartMove.MoveDepth)+rating > other.getAveragePotentialMoveRating(SmartMove.MoveDepth)+other.rating)?1:-1;
 		}
 
 		@Override
@@ -181,7 +181,7 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		* Returns the total rating of moves gained [positive] or lost [negative] for the team 
 		*/
 		private int getTeamMoveDiffValue(){
-			System.out.println(String.format("calculating team move diff for %s > %s", piece, dest));
+			//System.out.println(String.format("calculating team move diff for %s > %s", piece, dest));
 
 			List<Move> currentTeamMoves = piece.getTeam().getMoveList();
 
