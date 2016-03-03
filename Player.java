@@ -50,8 +50,8 @@ public class Player {
     	return name;
     }
 
-    public String getBotMove(){
-    	String mv = chesster.getBestMove();
+    public String getBotMoveText(){
+    	String mv = "move "+chesster.getBestMove().toString();
     	Game.gameLog.writeBuffer(mv);
     	return mv;
     }
@@ -63,50 +63,22 @@ public class Player {
     	try {
 			if (Arrays.asList(cmdList).contains(cmd)){
 				int index = 1;
+				Location select = null, dest = null;
 				switch (cmd) {
 					case "move":
-						String pieceName = tokens[index++];
-						Location move = new Location(tokens[index++]);
-						List<Piece> moveCanidates = new ArrayList<Piece>();
-						for (Piece p : team.getPieceSet()){
-	    					if (p.getName().equalsIgnoreCase(pieceName) && p.canMove(move))
-	    						moveCanidates.add(p);
-	    				}
-	    				if (moveCanidates.size()==1){
-	    					moveCanidates.get(0).moveTo(move);
-	    					return true;
-	    				}
-	    				else if (moveCanidates.size()>1){
-	    					if (index == tokens.length){
-	    						Game.gameLog.startBuffer();
-	    						Game.gameLog.bufferAppendln("Ambiguous move. Options:");
-	    						for (int i = 0; i<moveCanidates.size(); ++i)
-	    							Game.gameLog.bufferAppendln(String.format("%d: %s at %s", i+1, moveCanidates.get(i).getName(), moveCanidates.get(i).getLocation()));
-	    						Game.gameLog.bufferAppendln("Please move again and specify option: \"move "+pieceName+" "+move+" [option]\"");
-	    						Game.gameLog.terminateBuffer();
-	    						return false;
-							}
-							int canidate = Integer.parseInt(tokens[index++].replaceAll("[\\D]", ""))-1;
-							if (canidate >=0 && canidate < moveCanidates.size()) {
-								moveCanidates.get(canidate).moveTo(move);
-	    						return true;
-							} 
-							else {
-								Game.gameLog.startBuffer();
-	    						Game.gameLog.bufferAppendln("Invalid move option. Options:");
-	    						for (int i = 0; i<moveCanidates.size(); ++i)
-	    							Game.gameLog.bufferAppendln(String.format("%d: %s at %s", i+1, moveCanidates.get(i).getName(), moveCanidates.get(i).getLocation()));
-	    						Game.gameLog.bufferAppendln("Please move again and specify option: \"move "+pieceName+" "+move+" [option]\"");
-	    						Game.gameLog.terminateBuffer();
-	    						return false;
-							}
-	    				}
-	    				Game.gameLog.writeBuffer("Invalid move: '"+inStr+"'");
-	    				return false;
-
+						try {
+							Move move = new Move(game, team, inStr.substring(inStr.indexOf(" ")+1));
+							move.attempt();
+							return true;
+						} catch(GameException e){
+							e.writeMessagesToLog();
+							return false;
+						}
 					case "get":
 						Game.gameLog.startBuffer();
-						Location select = new Location(tokens[index++]);
+						try {
+							select = new Location(tokens[index++]);
+						} catch (GameException e){}
 						Piece selectedTilePiece = board.getTile(select).getOccupator();
 						if (selectedTilePiece != null)
 							Game.gameLog.bufferAppendArray(selectedTilePiece.getMoves());
@@ -135,7 +107,9 @@ public class Player {
 
 					case "attack":
 						Game.gameLog.startBuffer();
-						select = new Location(tokens[index++]);
+						try {
+							select = new Location(tokens[index++]);
+						} catch (GameException e){}
 						selectedTilePiece = board.getTile(select).getOccupator();
 						if (selectedTilePiece != null)
 							Game.gameLog.bufferAppendArray(selectedTilePiece.attackedPieces.toArray());
@@ -145,7 +119,9 @@ public class Player {
 
 					case "protect":
 						Game.gameLog.startBuffer();
-						select = new Location(tokens[index++]);
+						try {
+							select = new Location(tokens[index++]);
+						} catch (GameException e){}
 						selectedTilePiece = board.getTile(select).getOccupator();
 						if (selectedTilePiece != null)
 							Game.gameLog.bufferAppendArray(selectedTilePiece.protectedPieces.toArray());
@@ -154,8 +130,10 @@ public class Player {
 						return false;
 
 					case "getSim":
-						select = new Location(tokens[index++]);
-						Location dest = new Location(tokens[index++]);
+						try {
+							select = new Location(tokens[index++]);
+							dest = new Location(tokens[index++]);
+						} catch (GameException e){}
 						if (board.getTile(select).getOccupator() != null){
 							Game.gameLog.startBuffer();
 							Game.gameLog.bufferAppend(board.getTile(select).getOccupator()+" > "+dest+": ");

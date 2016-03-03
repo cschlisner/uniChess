@@ -8,12 +8,16 @@ public class Location {
 		this.y = y;
 	}
 
-	public Location(String in){
-		in = in.toLowerCase();
-		final String col = "ABCDEFGH";
-		final String row = "12345678";
-		this.x = col.toLowerCase().indexOf(in.charAt(0));
-		this.y = row.indexOf(in.charAt(1)); 
+	public Location(String in) throws GameException {
+		try {
+			in = in.toLowerCase();
+			final String col = "abcdefgh";
+			final String row = "12345678";
+			this.x = col.indexOf(in.charAt(0));
+			this.y = row.indexOf(in.charAt(1));
+		} catch (IndexOutOfBoundsException e){
+			throw new GameException("Could not parse location: "+in);
+		}
 	}
 
 	public boolean equals(Location l){
@@ -22,7 +26,7 @@ public class Location {
 
 	@Override
 	public String toString(){
-		final String col = "ABCDEFGH";
+		final String col = "abcdefgh";
 		final String row = "12345678";
 		return String.format("%c%c",col.charAt(x),row.charAt(y));
 	}

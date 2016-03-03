@@ -141,6 +141,7 @@ public class Log {
 			gameSave.put("imageOutput", imageOut);
 			if (exportImage)
 				gameSave.put("imageExportFile", imageExportFile);
+			gameSave.put("unicode", Game.unicode);
 			gameSave.put("id", game.getId());
 			gameSave.put("moves", moveHistory);
 

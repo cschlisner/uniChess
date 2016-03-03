@@ -10,6 +10,8 @@ import java.util.Date;
 public class Game {
 	public static Log gameLog;
 
+	public static boolean unicode;
+
 	private static Board board;
 	
 	public Player player1, player2;
@@ -24,11 +26,15 @@ public class Game {
 	
 	private static String gameId;
 
+
 	public Game(String p1Name, String p2Name){
-		this(p1Name, p2Name, false, null);
+		this(p1Name, p2Name, false, null, false);
+	}
+	public Game(String p1Name, String p2Name, boolean uncd){
+		this(p1Name, p2Name, false, null, uncd);
 	}
 	
-	public Game(String p1Name, String p2Name, boolean imageOut, String imageFileOut){
+	public Game(String p1Name, String p2Name, boolean imageOut, String imageFileOut, boolean uncd){
 
 		Date now = new Date();
 		SimpleDateFormat sdf = new SimpleDateFormat("kms");
@@ -38,6 +44,8 @@ public class Game {
 		board = new Board();
 
 		gameLog = new Log(this, imageOut, imageFileOut);
+
+		unicode = uncd;
 
 		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster", (p1Name!=null), Color.WHITE);
 		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster", (p2Name!=null), Color.BLACK);
@@ -62,6 +70,8 @@ public class Game {
 			gameId = gameData.getString("id");
 
 			gameLog = new Log(this, gameData.getBoolean("imageOutput"), gameData.optString("imageExportFile"));
+
+			unicode = gameData.getBoolean("unicode");
 			
 			JSONArray jsonMoveArray = gameData.getJSONArray("moves");
 
@@ -143,7 +153,7 @@ public class Game {
 		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
 
 		if (!getCurrentPlayer().isHuman && logMove)
-			input(getCurrentPlayer().getBotMove(), true);
+			input(getCurrentPlayer().getBotMoveText(), true);
 	}
 
 	public BufferedImage getBoardImage(){

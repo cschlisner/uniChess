@@ -38,18 +38,18 @@ public class Chesster {
 		}
 	}
 
-	public String getBestMove(){
+	public Move getBestMove(){
 
 		updateCurrentMoves();
 
 		Collections.sort(currentMoves);
 
-		for (SmartMove m : currentMoves)
-			System.out.println(m.toString() + " : "+((float) (m.apmr * (float)m.rating*0.1f)));
+		// for (SmartMove m : currentMoves)
+		// 	System.out.println(m.toString() + " : "+((float) (m.apmr * (float)m.rating*0.1f)));
 
 		SmartMove bestMove = currentMoves.get(currentMoves.size()-1);
 
-		return bestMove.toString();
+		return bestMove;
 	}
 	
 	/*
@@ -149,11 +149,6 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 				other.getAveragePotentialMoveRating(MoveDepth);
 
 			return ( ((float) (apmr * (float)rating*0.1f)) > ((float) (other.apmr * (float)other.rating*0.1f)))?1:-1;
-		}
-
-		@Override
-		public String toString(){
-			return String.format("move %s %s", piece.getName(), dest);
 		}
 
 		/**
