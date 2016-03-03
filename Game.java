@@ -118,7 +118,6 @@ public class Game {
 
 		if (getDormantPlayer().getTeam().inCheck()){
 			gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
-
 			getDormantPlayer().readTeamStatus();
 		}
 

@@ -44,8 +44,8 @@ public class Chesster {
 
 		Collections.sort(currentMoves);
 
-		// for (SmartMove m : currentMoves)
-		// 	System.out.println(m.toString() + " : "+m.rating+" | apmr: "+m.apmr);
+		for (SmartMove m : currentMoves)
+			System.out.println(m.toString() + " : "+((float) (m.apmr * (float)m.rating*0.1f)));
 
 		SmartMove bestMove = currentMoves.get(currentMoves.size()-1);
 
@@ -69,6 +69,9 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		public List<Location> potentialMoves;
 
 		public int rating, attackValue, protectValue, attackCount, protectCount, apmr, skval;
+
+		// this is a hefty operation so we really only want to do it once
+		public boolean amprCalculated;
 		
 		public SmartMove(Move m){
 			this(m.game, m.piece, m.dest, true);
@@ -132,13 +135,20 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 				}
 
 				apmr = (potentialMoves.size()>0)?(int)avgPotentialTreeAverage/potentialMoves.size():0;
+				amprCalculated = true;
 				return apmr;
 			}
 		}
 
+		// BOTH this AND other SmartMove need to have their apmrs calculated prior to calculation
 		@Override 
 		public int compareTo(SmartMove other){
-			return (this.getAveragePotentialMoveRating(SmartMove.MoveDepth)+rating > other.getAveragePotentialMoveRating(SmartMove.MoveDepth)+other.rating)?1:-1;
+			if (!this.amprCalculated)
+				getAveragePotentialMoveRating(MoveDepth);
+			if (!other.amprCalculated)
+				other.getAveragePotentialMoveRating(MoveDepth);
+
+			return ( ((float) (apmr * (float)rating*0.1f)) > ((float) (other.apmr * (float)other.rating*0.1f)))?1:-1;
 		}
 
 		@Override

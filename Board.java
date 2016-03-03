@@ -97,12 +97,13 @@ public class Board {
 		
 		m.selectPiece.setLocation(m.select); // move the piece back to the correct position on board
 		
-		if (m.dest == null) // we killed the moving piece so we need to re add it to the team
-			m.selectPiece.getTeam().getPieceSet().add(m.selectPiece);
+		if (m.dest == null)
+			m.selectPiece.revive();
 
 		else if (destinationPiece != null) destinationPiece.setLocation(m.dest); // we moved the moving piece so we need to replace the piece it removed
 
-		m.selectPiece.getTeam().updateStatus(); // refresh piece team that might have been modified
+		//m.selectPiece.update(); // refresh pieces that might have been modified
+		//if (m.dataPiece != null) m.dataPiece.update();
 
 		return returnVal;
 	}

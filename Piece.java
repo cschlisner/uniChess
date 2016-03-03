@@ -303,6 +303,13 @@ public class Piece {
 	    team.getPieceSet().remove(this);
 	}
 
+	// undoes what kill() does (used in move simulation)
+	public void revive(){
+		this.killed = false;
+		board.getTile(location).setOccupator(this);
+	    team.getPieceSet().add(this);	
+	}
+
 	public boolean isDead(){
 		return this.killed;
 	}
@@ -366,7 +373,7 @@ public class Piece {
 	* @return whether this piece holds check when there is an enemy piece at this location. 
 	*/
 	public boolean canCheck(Piece movedPiece, Location simulatedEnemyLocation){
-		return board.runMoveSimulation(new Board.MoveSimulation<Boolean>(this, movedPiece.getLocation(), simulatedEnemyLocation){
+		return board.runMoveSimulation(new Board.MoveSimulation<Boolean>(this, movedPiece, simulatedEnemyLocation){
 			@Override
 			public Boolean getSimulationData(){
 				return dataPiece.hasCheck();
