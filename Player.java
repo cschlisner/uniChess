@@ -145,6 +145,7 @@ public class Player {
 
 				}
 			}
+			Game.gameLog.writeBuffer("Invalid input.");
 			return false;
 		} catch (IndexOutOfBoundsException e){
 			Game.gameLog.writeBuffer("Invalid location");

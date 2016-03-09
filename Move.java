@@ -36,8 +36,8 @@ public class Move {
 		List<Piece> potentialPieces = new ArrayList<Piece>();
 
 		for (Piece p : t.getPieceSet())
-			if (p.getSymbol().equalsIgnoreCase(pieceSymbol) && p.canMove(dest))
-				if (((rank<0 ^ p.getLocation().y == rank)) && ((file<0 ^ p.getLocation().x == file))) // if the rank or file have been specified, add only matching pieces
+			if (p.ofType(pieceSymbol) && p.canMove(dest))
+				if (((rank < 0 ^ p.getLocation().y == rank)) && ((file < 0 ^ p.getLocation().x == file))) // if the rank or file have been specified, add only matching pieces
 					potentialPieces.add(p);
 
 		if (potentialPieces.size() == 1){
@@ -45,10 +45,11 @@ public class Move {
 			board = g.getBoard();
 			piece = potentialPieces.get(0);
 		}
-		if (potentialPieces.size() < 1)
-			throw new GameException("Invalid Move.");
-		if (potentialPieces.size() > 1){
 
+		if (potentialPieces.size() < 1)
+			throw new GameException("Invalid move.");
+
+		if (potentialPieces.size() > 1){
 			boolean specF=false, specR=false;
 			for (Piece p : potentialPieces){
 				for (Piece q : potentialPieces){

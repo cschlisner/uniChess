@@ -15,6 +15,7 @@ public class Piece {
 	
 	private boolean killed = false;
 	private String name;
+	private String unicodeSymbol;
 	private String symbol;
 	private Game.PieceType type;
 	private Location startPoint, location;
@@ -46,7 +47,8 @@ public class Piece {
 			case PAWN:
 				this.name = "Pawn";
 				this.value = 2;
-				this.symbol = (!Game.unicode)?"P":new String(Character.toChars(c.equals(Game.Color.BLACK)?9823:9817));
+				this.symbol = "P";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9823:9817)); 
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -76,7 +78,8 @@ public class Piece {
 			case ROOK:
 				this.name = "Rook";
 				this.value = 10;
-				this.symbol = (!Game.unicode)?"R":new String(Character.toChars(c.equals(Game.Color.BLACK)?9820:9814));
+				this.symbol = "R";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9820:9814));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -100,7 +103,8 @@ public class Piece {
 			case KNIGHT:
 				this.name = "Knight";
 				this.value = 6;
-				this.symbol = (!Game.unicode)?"N":new String(Character.toChars(c.equals(Game.Color.BLACK)?9822:9816));
+				this.symbol = "N";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9822:9816));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -127,7 +131,8 @@ public class Piece {
 			case BISHOP:
 				this.name = "Bishop";
 				this.value = 6;
-				this.symbol = (!Game.unicode)?"B":new String(Character.toChars(c.equals(Game.Color.BLACK)?9821:9815));
+				this.symbol = "B";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9821:9815));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -150,7 +155,8 @@ public class Piece {
 			case QUEEN:
 				this.name = "Queen";
 				this.value = 18;
-				this.symbol = (!Game.unicode)?"Q":new String(Character.toChars(c.equals(Game.Color.BLACK)?9819:9813));
+				this.symbol = "Q";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9819:9813));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -174,7 +180,8 @@ public class Piece {
 			case KING:	
 				this.name = "King";
 				this.value = 20;
-				this.symbol = (!Game.unicode)?"K":new String(Character.toChars(c.equals(Game.Color.BLACK)?9818:9812));
+				this.symbol = "K";
+				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9818:9812));
 				this.moveSet = new MoveSet(board, d, this){
 					@Override
 					public boolean isValidMove(Location m){
@@ -317,8 +324,12 @@ public class Piece {
 	public String getName(){
 		return name;
 	}
+	// if unicode is not specified, it uses the default game setting
 	public String getSymbol(){
-		return symbol;
+		return Game.unicode?unicodeSymbol:symbol;
+	}
+	public String getSymbol(boolean unicode){
+		return unicode?unicodeSymbol:symbol;
 	}
 	public Location getLocation(){
 		return location;
@@ -339,6 +350,10 @@ public class Piece {
 
 	public boolean ofType(Game.PieceType t){
 		return type.equals(t);
+	}
+
+	public boolean ofType(String s){
+		return (symbol.equalsIgnoreCase(s) || unicodeSymbol.equals(s));
 	}
 
 	public Object[] getMoves(){
@@ -434,6 +449,6 @@ public class Piece {
 
 	@Override
 	public String toString(){
-		return symbol+"|"+location;
+		return ((Game.unicode)?unicodeSymbol:symbol)+"|"+location;
 	}
 }
