@@ -74,7 +74,7 @@ public class Log {
 
 	public <T> void bufferAppendArray(T[] arr){
 		for (T el : arr)
-			bufferAppend(String.valueOf(el+" "));
+			bufferAppend(String.valueOf(((el instanceof Move)?((Move)el).dest:el)+" "));
 		bufferAppendln("");
 	}
 
@@ -219,6 +219,7 @@ public class Log {
 			lastBoardImage = createBoardImage();
 			getBoardImage();
 		}
+		else writeBuffer("Turn: "+game.getCurrentPlayer());
 	}
 
 	private void imageIOSetup(){

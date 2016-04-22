@@ -28,13 +28,13 @@ public class Chesster {
 	private void updateCurrentMoves(){
 		currentMoves.clear();
 
-		Map<Piece, List<Location>> moveMap = team.getMoveMap();
+		Map<Piece, List<Move>> moveMap = team.getMoveMap();
 		Iterator moveMapIterator = moveMap.keySet().iterator();
 
 		while (moveMapIterator.hasNext()){
 			Piece p = (Piece)moveMapIterator.next();
-			for (Location l : moveMap.get(p))
-				currentMoves.add(new SmartMove(game, p, l));
+			for (Move m : moveMap.get(p))
+				currentMoves.add(new SmartMove(m));
 		}
 	}
 
@@ -47,9 +47,7 @@ public class Chesster {
 		// for (SmartMove m : currentMoves)
 		// 	System.out.println(m.toString() + " : "+((float) (m.apmr * (float)m.rating*0.1f)));
 
-		SmartMove bestMove = currentMoves.get(currentMoves.size()-1);
-
-		return bestMove;
+		return currentMoves.get(currentMoves.size()-1);
 	}
 	
 	/*
@@ -64,35 +62,31 @@ public class Chesster {
 
 public static class SmartMove extends Move implements Comparable<SmartMove>{
 
-		public static int MoveDepth = 1;
+		public static int MoveDepth = 3;
 
-		public List<Location> potentialMoves;
+		public List<Move> potentialMoves;
 
-		public int rating, attackValue, protectValue, attackCount, protectCount, apmr, skval;
+		public int rating, attackValue, protectValue, attackCount, protectCount, apmr = 1, skval;
 
 		// this is a hefty operation so we really only want to do it once
 		public boolean amprCalculated;
 		
 		public SmartMove(Move m){
-			this(m.game, m.piece, m.dest, true);
+			this(m.game, m.board, m.piece, m.dest, true);
 		}
 		public SmartMove(Move m, boolean gtmdv){
-			this(m.game, m.piece, m.dest, gtmdv);
+			this(m.game, m.board, m.piece, m.dest, gtmdv);
 		}
 
-		public SmartMove(Game g, Piece p, Location d){
-			this(g, p, d, true);
+		public SmartMove(Game g, Board b, Piece p, Location d){
+			this(g, b, p, d, true);
 		}
 
 		// gtdv = getTeamDiffValue, if this is specified as true then the getTeamMoveDiffValue() will run (recursively)
-		public SmartMove(Game g, Piece p, Location d, Boolean gtmdv){
-			super(g,p,d);
+		public SmartMove(Game g, Board b, Piece p, Location d, Boolean gtmdv){
+			super(g, b, p, d);
 			
 			potentialMoves = p.getSimulatedMoves(d);
-
-			if (potentialMoves == null){
-				System.out.println(this.toString());
-			}
 			
 			attackValue = getAttackValue();
 			protectValue = getProtectValue();
@@ -105,16 +99,15 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 			// End of depth, return the average rating of all potential moves
 			if (depth == 0){
 				int avgPotentialRating = 0;
-				for (Location potentialMoveLocation : potentialMoves){
-					SmartMove potentialMove = 
-						board.runMoveSimulation(new Board.MoveSimulation<Chesster.SmartMove>(potentialMoveLocation, piece, dest){
+				for (Move potentialMove : potentialMoves){
+						// gets the SmartMove Object for the potential move
+						SmartMove potSMV = (new Simulator<Chesster.SmartMove>(this, potentialMove){
 							@Override
-							public Chesster.SmartMove getSimulationData(){
-								return new Chesster.SmartMove(game, selectPiece, dataLocation, false);
+							public Chesster.SmartMove getData(){
+								return new Chesster.SmartMove((Move)data[0], false);
 							}
-						});
-
-					avgPotentialRating += potentialMove.rating;
+						}).simulate();
+					avgPotentialRating += potSMV.rating;
 				}
 				return (potentialMoves.size()>0)?(int)avgPotentialRating/potentialMoves.size():0;
 			}
@@ -125,14 +118,13 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 
 				int remainingDepth = depth - 1;
 				
-				for (Location potentialMoveLocation : potentialMoves){
-					avgPotentialTreeAverage += board.runMoveSimulation(new Board.MoveSimulation<Chesster.SmartMove>(potentialMoveLocation, piece, dest){
+				for (Move potentialMove : potentialMoves)
+					avgPotentialTreeAverage += (new Simulator<Chesster.SmartMove>(this, potentialMove){
 													@Override
-													public Chesster.SmartMove getSimulationData(){
-														return new Chesster.SmartMove(game, selectPiece, dataLocation, false);
+													public Chesster.SmartMove getData(){
+														return new Chesster.SmartMove((Move)data[0], false);
 													}
-												}).getAveragePotentialMoveRating(remainingDepth);
-				}
+												}).simulate().getAveragePotentialMoveRating(remainingDepth);
 
 				apmr = (potentialMoves.size()>0)?(int)avgPotentialTreeAverage/potentialMoves.size():0;
 				amprCalculated = true;
@@ -140,13 +132,13 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 			}
 		}
 
-		// BOTH this AND other SmartMove need to have their apmrs calculated prior to calculation
+		// BOTH this AND other SmartMove need to have their apmrs calculated prior to comparison
 		@Override 
 		public int compareTo(SmartMove other){
-			if (!this.amprCalculated)
-				getAveragePotentialMoveRating(MoveDepth);
-			if (!other.amprCalculated)
-				other.getAveragePotentialMoveRating(MoveDepth);
+			// if (!this.amprCalculated)
+			// 	getAveragePotentialMoveRating(MoveDepth);
+			// if (!other.amprCalculated)
+			// 	other.getAveragePotentialMoveRating(MoveDepth);
 
 			return ( ((float) (apmr * (float)rating*0.1f)) > ((float) (other.apmr * (float)other.rating*0.1f)))?1:-1;
 		}
@@ -157,10 +149,10 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		private int getAttackValue(){
 			attackCount = 0;
 			int count = 0;
-			for (Location l : potentialMoves){
-				if (board.getTile(l).containsEnemy(piece)){
+			for (Move m : potentialMoves){
+				if (m.destTile.containsEnemy(piece.getTeam())){
 					++attackCount;
-					count += board.getTile(l).getOccupator().value;
+					count += m.destTile.getOccupator().value;
 				}
 			}
 			return count;
@@ -173,10 +165,10 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		private int getProtectValue(){
 			protectCount = 0;
 			int count = 0;
-			for (Location l : potentialMoves){
-				if (board.getTile(l).containsFriendly(piece)){
+			for (Move m : potentialMoves){
+				if (m.destTile.containsFriendly(piece)){
 					++protectCount;
-					count += board.getTile(l).getOccupator().value;
+					count += m.destTile.getOccupator().value;
 				}
 			}
 			return count;
@@ -190,25 +182,15 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 
 			List<Move> currentTeamMoves = piece.getTeam().getMoveList();
 
-			//////////////////////////////////////////////////////////////////
-			// System.out.println("Current Team moves:");
-			// printMoveList(currentTeamMoves);
-			// System.out.println("_______________");
-			//////////////////////////////////////////////////////////////////
-
-			List<Move> potentialTeamMoves = board.runMoveSimulation(new Board.MoveSimulation<List<Move>>(piece, dest){
+			List<Move> potentialTeamMoves = (new Simulator<List<Move>>(this, piece){
 													@Override
-													public List<Move> getSimulationData(){
-														selectPiece.getTeam().updateStatus();
-														return selectPiece.getTeam().getMoveList();
+													public List<Move> getData(){
+														try {
+															((Piece)data[0]).getTeam().updateStatus();
+														} catch (GameException e){};
+														return ((Piece)data[0]).getTeam().getMoveList();
 													}
-												});
-
-			//////////////////////////////////////////////////////////////////
-			// System.out.println("Potential Team moves:");
-			// printMoveList(potentialTeamMoves); 
-			//System.out.println("_______________");
-			//////////////////////////////////////////////////////////////////
+												}).simulate();
 
 			Set<Move> teamMovesLoss = new HashSet<Move>(currentTeamMoves);
 			List<Move> meme = new ArrayList<Move>();
@@ -220,20 +202,8 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 			}
 			teamMovesLoss.removeAll(meme);
 
-			//////////////////////////////////////////////////////////////////
-			// System.out.println("Team moves loss:");
-			// printMoveSet(teamMovesLoss);
-			//System.out.println("_______________");
-			//////////////////////////////////////////////////////////////////
-
 			Set<Move> teamMovesGain = new HashSet<Move>(potentialTeamMoves);
 			teamMovesGain.removeAll(currentTeamMoves);	 // now contains all moves newly available for the team if this move is acted out
-
-			//////////////////////////////////////////////////////////////////
-			// System.out.println("Team moves gain:");
-			// printMoveSet(teamMovesGain);
-			//System.out.println("_______________");
-			//////////////////////////////////////////////////////////////////
 
 			int totalRatingLoss = 0, totalRatingGain = 0;
 
@@ -274,20 +244,21 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		public int isDefend(){
 			int wght = 0;
 			if (protectCount > 0){
-				for (Location l : potentialMoves){
-					if (board.getTile(l).containsFriendly(piece)){
+				for (Move m : potentialMoves){
+					if (m.destTile.containsFriendly(piece)){
+						int potentialFriendDefendCount = (new Simulator<Integer>(this, m.destTile.getOccupator()){
+															@Override
+															public Integer getData(){
+																try {
+																	((Piece)data[0]).getTeam().updateStatus();
+																} catch (GameException e){}
+																return ((Piece)data[0]).defenderCount;
+															}
+														}).simulate();
 
-						int potentialFriendDefendCount = board.runMoveSimulation(new Board.MoveSimulation<Integer>(board.getTile(l).getOccupator(), piece, dest){
-							@Override
-							public Integer getSimulationData(){
-								dataPiece.getTeam().updateStatus();
-								return dataPiece.defenderCount;
-							}
-						});
+						int currentFriendDefendCount = m.destTile.getOccupator().defenderCount;
 
-						int currentFriendDefendCount = board.getTile(l).getOccupator().defenderCount;
-
-						wght += (potentialFriendDefendCount - currentFriendDefendCount == 1)?board.getTile(l).getOccupator().value:0;
+						wght += (potentialFriendDefendCount - currentFriendDefendCount == 1)?m.destTile.getOccupator().value:0;
 					}
 				}
 			}
@@ -298,8 +269,8 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		* Returns value of piece occupating destination tile if this is move will caputre the piece
 		*/
 		public int isCapture(){
-			if (board.getTile(dest).containsEnemy(piece))
-				return board.getTile(dest).getOccupator().value;
+			if (destTile.containsEnemy(piece.getTeam()))
+				return destTile.getOccupator().value;
 			return 0;
 		}
 
@@ -309,13 +280,13 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		public int canBeCaptured(){
 			for (Piece p : piece.getOpponent().getPieceSet())
 				if ((p.getType().equals(Game.PieceType.PAWN) && 
-					board.runMoveSimulation(new Board.MoveSimulation<Boolean>(p, piece, dest){
+					(new Simulator<Boolean>(this, p){
 						@Override
-						public Boolean getSimulationData(){
-							dataPiece.update();
-							return dataPiece.canMove(dest);
+						public Boolean getData(){
+							((Piece)data[0]).update();
+							return ((Piece)data[0]).canMove(dest);
 						}
-					}))	^ p.canMove(dest)){ // if the enemy piece is a pawn AND can caputure this move (hence the simulation) XOR the enemy piece can move here (a guaranteed capture)
+					}).simulate()) ^ p.canMove(dest)){ // if the enemy piece is a pawn AND can caputure this move (hence the simulation) XOR the enemy piece can move here (a guaranteed capture)
 						return -1 * (attackValue + isCapture() + piece.value + skval);
 					}
 			return 0;
@@ -328,15 +299,15 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		public int canSkewer(){
 			int wght = 0;
 			if ((piece.ofType(Game.PieceType.ROOK) || piece.ofType(Game.PieceType.BISHOP) || piece.ofType(Game.PieceType.QUEEN)) && attackValue > 0){
-				for (Location l : potentialMoves){
-					if (board.getTile(l).containsEnemy(piece)){
-						if (attackCount == board.runMoveSimulation(new Board.MoveSimulation<Integer>(piece, l, null){ // remove piece that can be attacked from board
+				for (Move m : potentialMoves){
+					if (m.destTile.containsEnemy(piece.getTeam())){
+						if (attackCount == (new Simulator<Integer>(new Move(game, board, m.destPiece, null), piece){ // remove piece that can be attacked from board
 												@Override
-												public Integer getSimulationData(){
-													dataPiece.update();					    // re-calculate attackedPieces list	 
-													return dataPiece.attackedPieces.size(); // return amount of attacks that can be made with the piece at l removed
+												public Integer getData(){
+													((Piece)data[0]).update();					    // re-calculate attackedPieces list	 
+													return ((Piece)data[0]).attackedPieces.size(); // return amount of attacks that can be made with the piece at l removed
 												}
-											})){
+											}).simulate()){
 							wght += Piece.AVERAGE_PIECE_VAL;
 						}
  					}
@@ -375,18 +346,18 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 				totalTeamAttacks += p.attackedPieces.size();
 			totalTeamAttacks -= piece.attackedPieces.size();
 
-			int attackDiff = totalTeamAttacks - board.runMoveSimulation(new Board.MoveSimulation<Integer>(piece, dest){
+			int attackDiff = totalTeamAttacks - (new Simulator<Integer>(this, piece){
 													@Override
-													public Integer getSimulationData(){
+													public Integer getData(){
 														int tta = 0;
 
-														for (Piece p : selectPiece.getTeam().getPieceSet())
+														for (Piece p : ((Piece)data[0]).getTeam().getPieceSet())
 															tta += p.attackedPieces.size();
 
-														tta -= selectPiece.attackedPieces.size();
+														tta -= ((Piece)data[0]).attackedPieces.size();
 														return tta;
 													}
-												});
+												}).simulate();
 			return Piece.AVERAGE_PIECE_VAL*attackDiff;
 		}
 		
@@ -400,9 +371,9 @@ public static class SmartMove extends Move implements Comparable<SmartMove>{
 		public int canUndermine(){
 			int wght = 0;
 			if (isCapture()>0){
-				if (board.getTile(dest).getOccupator().defending != null){
+				if (destTile.getOccupator().defending != null){
 					wght += Piece.AVERAGE_PIECE_VAL/2;
-					if (board.getTile(dest).getOccupator().defending.defenderCount == 1)
+					if (destTile.getOccupator().defending.defenderCount == 1)
 						wght += Piece.AVERAGE_PIECE_VAL/2;
 				}
 			}

@@ -69,82 +69,52 @@ public class Board {
 		return true;
 	}
 
-	/**
-	* This will accept a MoveSimulation object which is specified with a selection Location and a destination Location
-	* and will replace the occupator at the destination with the occupator at the selection, run the abstract method 
-	* getSimulationData() that is outlined when the MoveSimulation object is supplied, store the result (of Type T) 
-	* in a variable, then relocate the now switched occupators to their original locations. 
-	*
-	* This method will not account for valid moves. 
-	*
-	* @param MoveSimulation<T> m
-	* @return <T> result of m.getSimulation data after moveSimulation
-	*
-	*/
-	public <T> T runMoveSimulation(MoveSimulation<T> m){
-		if (m.dest != null && m.dest.equals(m.select)) 
-			return m.getSimulationData();
+	public void printSelf(Game g){
+		boolean reversed = g.isCurrentPlayer(g.player2);
 
-		Piece destinationPiece = (m.dest!=null)?getTile(m.dest).getOccupator():null;
-		if (m.selectPiece == null) m.selectPiece = getTile(m.select).getOccupator();
-
-		if (m.dest != null)
-			m.selectPiece.setLocation(m.dest); // sets it's current location to m.dest, the previous location occupator to null, and the occupator at m.dest to the piece
-		else 
-			m.selectPiece.kill(); // sets location to null and removes it from board / team
-
-		T returnVal =  m.getSimulationData(); // do stuff
-		
-		m.selectPiece.setLocation(m.select); // move the piece back to the correct position on board
-		
-		if (m.dest == null)
-			m.selectPiece.revive();
-
-		else if (destinationPiece != null) destinationPiece.setLocation(m.dest); // we moved the moving piece so we need to replace the piece it removed
-
-		//m.selectPiece.update(); // refresh pieces that might have been modified
-		//if (m.dataPiece != null) m.dataPiece.update();
-
-		return returnVal;
+		int max = findMaxLen(getBoardState());
+		int y = 8;
+		writeColumnLabels(max, reversed);
+		if (!reversed){
+			for (Board.Tile[] row : getBoardState()){
+				System.out.print(y);
+				for (Board.Tile el : row){
+					System.out.print(el);
+					for (int k=0;k<((max-String.valueOf(el).length()));++k)	
+						System.out.print(" ");
+				}
+				System.out.println(y--);
+			}
+		} else {
+			for (int i = getBoardState().length-1; i >= 0; --i){
+				System.out.print(y-i);
+				for (int j = getBoardState()[0].length-1; j >= 0; --j){
+					System.out.print(getBoardState()[i][j]);
+					for (int k=0;k<((max-String.valueOf(getBoardState()[i][j]).length()));++k)	
+						System.out.print(" ");
+				}
+				System.out.println(y-i);
+			}
+		}
+		writeColumnLabels(max, reversed);
 	}
 
-	public static abstract class MoveSimulation<T> {
-		public Location select;
-		public Location dest;
-
-		public Piece dataPiece, selectPiece;
-		public Location dataLocation;
-
-		public MoveSimulation(Location select, Location dest){
-			this(null, null, select, dest);
+	private void writeColumnLabels(int max, boolean reversed){
+		for (int x = 0; x<9; ++x){
+			if (x>0) System.out.print(" ABCDEFGH".charAt((reversed)?9-x:x));
+			for (int k=0;k<(max-1);++k)	
+				System.out.print(" ");
 		}
-		public MoveSimulation(Piece selectPiece, Location dest){
-			this(null, null, selectPiece.getLocation(), dest);
-			this.selectPiece = selectPiece;
-		}
-		public MoveSimulation(Piece dataPiece, Location select, Location dest){
-			this(null, dataPiece, select, dest);
-		}
-		public MoveSimulation(Piece dataPiece, Piece selectPiece, Location dest){
-			this(null, dataPiece, selectPiece.getLocation(), dest);
-			this.selectPiece = selectPiece;
-		}
-		public MoveSimulation(Location dataLocation, Location select, Location dest){
-			this(dataLocation, null, select, dest);
-		}
-		public MoveSimulation(Location dataLocation, Piece selectPiece, Location dest){
-			this(dataLocation, null, selectPiece.getLocation(), dest);
-			this.selectPiece = selectPiece;
-		}
-		public MoveSimulation(Location dataLocation, Piece dataPiece, Location select, Location dest){
-			this.dataLocation = dataLocation;
-			this.dataPiece = dataPiece;
-			this.select = select;
-			this.dest = dest;
-		}
-
-		public abstract T getSimulationData();
+		System.out.println("");
 	}
+	private static <T> int findMaxLen(T[][] arr){
+		int max=0;
+		for (T[] row : arr)
+			for (T el : row)
+		 max = (String.valueOf(el).length() > max)?String.valueOf(el).length():max;
+		return max;
+    }
+
 
 	public class Tile {
 		private Piece occupator;
@@ -170,8 +140,12 @@ public class Board {
 			return occupator;
 		}
 
-		public boolean containsEnemy(Piece p){
-			return (occupator!=null && !occupator.getTeam().equals(p.getTeam()));
+		public boolean containsEnemy(Team team){
+			return (occupator!=null && !occupator.getTeam().equals(team));
+		}
+
+		public boolean containsEnemyOfType(Team team, Game.PieceType eType){
+			return (occupator!=null && !occupator.getTeam().equals(team) && occupator.ofType(eType));
 		}
 
 		public boolean containsFriendly(Piece p){

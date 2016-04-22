@@ -15,8 +15,20 @@ public class Team {
 
     private boolean checked = false;
     private boolean checkMated = false;
-    private List<Location> checkedMoves = new ArrayList<Location>();
+    private List<Move> checkedMoves = new ArrayList<Move>();
     private List<Piece> attackers = new ArrayList<Piece>();
+
+    public Team(Game g, Board b, Team other){
+        game = g;
+        board = b;
+        color = other.getColor();
+        
+        for (Piece p : other.getPieceSet()){
+            Piece clone = new Piece(g, board, this, p.getType(), color, p.getMoveSetDir(), p.getLocation());
+            this.pieceSet.add(clone);
+            board.getTile(p.getLocation()).setOccupator(clone);
+        }
+    }
 
     /**
      * Creates new team of Game.Color c at position top or bottom 
@@ -33,25 +45,25 @@ public class Team {
         int d = (c.equals(Game.Color.BLACK))?-1:1;
         Location org = (d>0)?new Location(0,0):new Location(7,7);
 
-        addToPieceSet(new Piece(g, this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*0), org.y)));
-        addToPieceSet(new Piece(g, this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*7), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*0), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.ROOK, c, d, new Location(org.x+(d*7), org.y)));
 
-        addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*1), org.y)));
-        addToPieceSet(new Piece(g, this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*6), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*1), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.KNIGHT, c, d, new Location(org.x+(d*6), org.y)));
 
-        addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*2), org.y)));
-        addToPieceSet(new Piece(g, this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*5), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*2), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.BISHOP, c, d, new Location(org.x+(d*5), org.y)));
 
         // King and queen are symmetrical
-        addToPieceSet(new Piece(g, this, Game.PieceType.KING, c, d, new Location(org.x+(d*((d>0)?4:3)), org.y)));
-        addToPieceSet(new Piece(g, this, Game.PieceType.QUEEN, c, d, new Location(org.x+(d*((d>0)?3:4)), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.KING, c, d, new Location(org.x+(d*((d>0)?4:3)), org.y)));
+        addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.QUEEN, c, d, new Location(org.x+(d*((d>0)?3:4)), org.y)));
 
         for (int i = 0; i < 8; ++i)
-            addToPieceSet(new Piece(g, this, Game.PieceType.PAWN, c, d, new Location(i, ((d>0)?org.y+1:org.y-1))));
+            addToPieceSet(new Piece(g, g.getBoard(), this, Game.PieceType.PAWN, c, d, new Location(i, ((d>0)?org.y+1:org.y-1))));
     }
 
     public void addToPieceSet(Piece p){
-        pieceSet.add(p);
+        pieceSet.add(p);    
         board.getTile(p.getLocation()).setOccupator(p);
     }
 
@@ -68,6 +80,10 @@ public class Team {
     	return pieceSet;
     }
 
+    public void setPieceSet(List<Piece> ps){
+        pieceSet = ps;
+    }
+
     public Piece getPiece(Game.PieceType t){
     	for (Piece p : pieceSet)
     		if (p.ofType(t))
@@ -75,8 +91,8 @@ public class Team {
     	return null;
     }
 
-    public Map<Piece, List<Location>> getMoveMap(){
-        Map<Piece, List<Location>> moveMap = new HashMap<Piece, List<Location>>();
+    public Map<Piece, List<Move>> getMoveMap(){
+        Map<Piece, List<Move>> moveMap = new HashMap<Piece, List<Move>>();
 
     	for (Piece p : pieceSet)
             if (p.getMoveList().size()>0)
@@ -90,23 +106,22 @@ public class Team {
 
         for (Piece p : pieceSet)
             if (p.getMoveList().size()>0)
-              for (Location l : p.getMoveList())
-                moveList.add(new Move(game, p, l));
+                moveList.addAll(p.getMoveList());
 
         return moveList;
     }
 
-
-    public void updateStatus(){
+    public void updateStatus() throws GameException{
+        for (Piece p : pieceSet)
+            p.update();
         attackers = updateAttackers();
         checked = !attackers.isEmpty();
         if (checked)
             checkedMoves = updateCheckedMoves();
         if (updateCheckMate())
-            checkMated = true;
-        
-        for (Piece p : pieceSet)
-            p.update();
+            throw new GameException(GameException.CHECKMATE, game.getPlayer(color)+" in Checkmate!");
+        // if (!checked && getMoveList().isEmpty())
+        //     throw new GameException(GameException.STALEMATE, game.getPlayer(color)+" in Stalemate!");
     }
 
     public boolean inCheck(){
@@ -115,15 +130,15 @@ public class Team {
     public boolean inCheckMate(){
         return checkMated;
     }
-    public List<Location> getCheckedMoves(){
+    public List<Move> getCheckedMoves(){
         return checkedMoves;
     }
     public List<Piece> getAttackers(){
         return attackers;
     }
-    public boolean canMoveWhenChecked(Piece p, Location move){
+    public boolean canMoveWhenChecked(Move move){
         for (Piece a : attackers)
-            if (a.canCheck(p, move))
+            if (a.canCheck(move))
                 return false;
         return true;
     }
@@ -149,18 +164,18 @@ public class Team {
     }
 
 
-    private List<Location> updateCheckedMoves(){
-        List<Location> moves = new ArrayList<Location>();
+    private List<Move> updateCheckedMoves(){
+        List<Move> moves = new ArrayList<Move>();
         if (inCheck()){
             for (Piece p : pieceSet){
                 moveloop:
-                for (Location move : p.getMoveList()){
+                for (Move move : p.getMoveList()){
                     if (p.ofType(Game.PieceType.KING)){
                         moves.add(move);
                         continue moveloop;
                     }
                    for (Piece a : attackers)
-                        if (a.canCheck(p, move))
+                        if (a.canCheck(move))
                             continue moveloop;
                     moves.add(move);
                 }

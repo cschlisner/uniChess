@@ -31,13 +31,13 @@ public class Player {
 
     public void readTeamStatus(){
     	Game.gameLog.startBuffer();
-    	Map<Piece, List<Location>> moveMap = team.getMoveMap();
+    	Map<Piece, List<Move>> moveMap = team.getMoveMap();
 		Iterator moveMapIterator = moveMap.keySet().iterator();
 
 		while (moveMapIterator.hasNext()){
 			Piece p = (Piece)moveMapIterator.next();
 			Game.gameLog.bufferAppend(p+" : ");
-    	 	Game.gameLog.bufferAppendArray(moveMap.get(p).toArray());
+			Game.gameLog.bufferAppendArray(moveMap.get(p).toArray());
 		}
     	Game.gameLog.terminateBuffer();
     }
@@ -51,106 +51,92 @@ public class Player {
     }
 
     public String getBotMoveText(){
-    	String mv = "move "+chesster.getBestMove().toString();
+    	String mv = "move "+chesster.getBestMove().getANString();
     	Game.gameLog.writeBuffer(mv);
     	return mv;
     }
 
-    public boolean readMove(String inStr){
+    public void readMove(String inStr) throws GameException{
     	String[] tokens = inStr.split(" ");
 
+		if (tokens.length < 1)
+			throw new GameException(GameException.INPUT, "Invalid move.");
+
     	String cmd = tokens[0];
-    	try {
-			if (Arrays.asList(cmdList).contains(cmd)){
-				int index = 1;
-				Location select = null, dest = null;
-				switch (cmd) {
-					case "move":
-						try {
-							Move move = new Move(game, team, inStr.substring(inStr.indexOf(" ")+1));
-							move.attempt();
-							return true;
-						} catch(GameException e){
-							e.writeMessagesToLog();
-							return false;
-						}
-					case "get":
-						Game.gameLog.startBuffer();
-						try {
-							select = new Location(tokens[index++]);
-						} catch (GameException e){}
-						Piece selectedTilePiece = board.getTile(select).getOccupator();
-						if (selectedTilePiece != null)
-							Game.gameLog.bufferAppendArray(selectedTilePiece.getMoves());
-						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
-						Game.gameLog.terminateBuffer();
-						return false;
+		if (Arrays.asList(cmdList).contains(cmd)){
+			int index = 1;
+			Location select = null, dest = null;
+			String[] msg;
+			switch (cmd) {
+				case "move":
+					Move move = new Move(game, board, team, inStr.substring(inStr.indexOf(" ")+1));
+					move.attempt();
+					return;
 
-					case "status":
-						readTeamStatus();
-						return false;
+				case "get":
+					msg = new String[1];
+					select = new Location(tokens[index++]);
+					Piece selectedTilePiece = board.getTile(select).getOccupator();
+					if (selectedTilePiece != null)
+						msg[0] = Arrays.toString(selectedTilePiece.getMoves());
+					else msg[0] = "Tile at "+select+" has no piece.";
+					throw new GameException(GameException.INPUT, msg);
 
-					case "forfeit": 
-						forfeit = true;
-						return true;
-					
-					case "draw":
-						draw = true;
-						return false;
+				case "status":
+					readTeamStatus();
+					throw new GameException(GameException.INPUT, "");
 
-					case "help":
-						Game.gameLog.startBuffer();
-						Game.gameLog.bufferAppend("Commands: ");
-						Game.gameLog.bufferAppendArray(cmdList);
-						Game.gameLog.terminateBuffer();
-						return false;
+				case "forfeit": 
+					throw new GameException(GameException.FORFEIT, "");
+				
+				case "draw":
+					draw = true;
+					throw new GameException(GameException.INPUT, "");
 
-					case "attack":
-						Game.gameLog.startBuffer();
-						try {
-							select = new Location(tokens[index++]);
-						} catch (GameException e){}
-						selectedTilePiece = board.getTile(select).getOccupator();
-						if (selectedTilePiece != null)
-							Game.gameLog.bufferAppendArray(selectedTilePiece.attackedPieces.toArray());
-						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
-						Game.gameLog.terminateBuffer();
-						return false;
+				case "help":
+					 throw new GameException(GameException.INPUT, "Commands: "+Arrays.toString(cmdList));
 
-					case "protect":
-						Game.gameLog.startBuffer();
-						try {
-							select = new Location(tokens[index++]);
-						} catch (GameException e){}
-						selectedTilePiece = board.getTile(select).getOccupator();
-						if (selectedTilePiece != null)
-							Game.gameLog.bufferAppendArray(selectedTilePiece.protectedPieces.toArray());
-						else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
-						Game.gameLog.terminateBuffer();
-						return false;
+				// case "attack":
+				// 	Game.gameLog.startBuffer();
+				// 	try {
+				// 		select = new Location(tokens[index++]);
+				// 	} catch (GameException e){}
+				// 	selectedTilePiece = board.getTile(select).getOccupator();
+				// 	if (selectedTilePiece != null)
+				// 		Game.gameLog.bufferAppendArray(selectedTilePiece.attackedPieces.toArray());
+				// 	else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
+				// 	Game.gameLog.terminateBuffer();
+				// 	return;
 
-					case "getSim":
-						try {
-							select = new Location(tokens[index++]);
-							dest = new Location(tokens[index++]);
-						} catch (GameException e){}
-						if (board.getTile(select).getOccupator() != null){
-							Game.gameLog.startBuffer();
-							Game.gameLog.bufferAppend(board.getTile(select).getOccupator()+" > "+dest+": ");
-							Game.gameLog.bufferAppendArray(board.getTile(select).getOccupator().getSimulatedMoves(dest).toArray());
-							Game.gameLog.terminateBuffer();
-						}
-						else Game.gameLog.writeBuffer("No piece at selected location");
-	    				return false;
+				// case "protect":
+				// 	Game.gameLog.startBuffer();
+				// 	try {
+				// 		select = new Location(tokens[index++]);
+				// 	} catch (GameException e){}
+				// 	selectedTilePiece = board.getTile(select).getOccupator();
+				// 	if (selectedTilePiece != null)
+				// 		Game.gameLog.bufferAppendArray(selectedTilePiece.protectedPieces.toArray());
+				// 	else Game.gameLog.writeBuffer("Tile at "+select+" has no piece.");
+				// 	Game.gameLog.terminateBuffer();
+				// 	return;
 
-				}
+				// case "getSim":
+				// 	try {
+				// 		select = new Location(tokens[index++]);
+				// 		dest = new Location(tokens[index++]);
+				// 	} catch (GameException e){}
+				// 	if (board.getTile(select).getOccupator() != null){
+				// 		Game.gameLog.startBuffer();
+				// 		Game.gameLog.bufferAppend(board.getTile(select).getOccupator()+" > "+dest+": ");
+				// 		Game.gameLog.bufferAppendArray(board.getTile(select).getOccupator().getSimulatedMoves(dest).toArray());
+				// 		Game.gameLog.terminateBuffer();
+				// 	}
+				// 	else Game.gameLog.writeBuffer("No piece at selected location");
+    			//	return;
+
 			}
-			Game.gameLog.writeBuffer("Invalid input.");
-			return false;
-		} catch (IndexOutOfBoundsException e){
-			Game.gameLog.writeBuffer("Invalid location");
-			return false;
 		}
+		else throw new GameException(GameException.INPUT, "Invalid command.");
     }
 
     @Override

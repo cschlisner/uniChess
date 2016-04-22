@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Piece {
+public class Piece implements Cloneable{
 
 	public static final int AVERAGE_PIECE_VAL = ((8*2)+(4*6)+(18)+(20))/16;
 
@@ -29,11 +29,11 @@ public class Piece {
 	public int value;
 
 	public List<Piece> attackedPieces, protectedPieces;
-	private List<Location> moveList;
+	private List<Move> moveList;
 
-	public Piece(Game g, Team tm, Game.PieceType type, Game.Color c, int d, Location l){
+	public Piece(Game g, Board b, Team tm, Game.PieceType type, Game.Color c, int d, Location l){
 		game = g;
-    	board = g.getBoard();
+    	board = b;
 		this.team = tm;
 		this.type = type;
 		this.color = c;
@@ -41,7 +41,7 @@ public class Piece {
 		this.location = startPoint;
 		attackedPieces = new ArrayList<Piece>();
 		protectedPieces = new ArrayList<Piece>();
-		moveList = new ArrayList<Location>();
+		moveList = new ArrayList<Move>();
 
 		switch(type){
 			case PAWN:
@@ -49,7 +49,7 @@ public class Piece {
 				this.value = 2;
 				this.symbol = "P";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9823:9817)); 
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
@@ -59,10 +59,10 @@ public class Piece {
 						if (yDiff == 1 && xDiff==1 && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 						
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(new Move(game, game.getBoard(), piece, t.getLocale()))))){
 							if (yDiff<(piece.location.equals(piece.startPoint)?3:2) && yDiff > 0){
 								
-								boolean canAttack = (yDiff == 1 && xDiff==1 && t.containsEnemy(piece));
+								boolean canAttack = (yDiff == 1 && xDiff==1 && t.containsEnemy(piece.getTeam()));
 								if ((yDiff==2 && xDiff==0 && t.getOccupator()==null) || (yDiff == 1 && xDiff==0 && t.getOccupator()==null) || canAttack){ 
 										if (canAttack)
 											piece.attackedPieces.add(t.getOccupator());
@@ -80,7 +80,7 @@ public class Piece {
 				this.value = 10;
 				this.symbol = "R";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9820:9814));
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
@@ -88,10 +88,10 @@ public class Piece {
 								if (!protectedPieces.contains(t.getOccupator())) 
 									piece.protectedPieces.add(t.getOccupator());
 
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(new Move(game, game.getBoard(), piece, t.getLocale()))))){
 
 							if (t.available(piece) && board.cardinalLineOfSightClear(piece.location, m)){
-								if (t.containsEnemy(piece))
+								if (t.containsEnemy(piece.getTeam()))
 									piece.attackedPieces.add(t.getOccupator());
 								return true;
 							}
@@ -105,7 +105,7 @@ public class Piece {
 				this.value = 6;
 				this.symbol = "N";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9822:9816));
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						t = board.getTile(m);
@@ -116,9 +116,9 @@ public class Piece {
 								if (!protectedPieces.contains(t.getOccupator())) 
 									piece.protectedPieces.add(t.getOccupator());
 						
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(new Move(game, game.getBoard(), piece, t.getLocale()))))){
 							if (((xDiff==2 && yDiff==1) || (xDiff==1 && yDiff==2))){
-								if (t.containsEnemy(piece))
+								if (t.containsEnemy(piece.getTeam()))
 									piece.attackedPieces.add(t.getOccupator());
 								return true;
 							}
@@ -133,7 +133,7 @@ public class Piece {
 				this.value = 6;
 				this.symbol = "B";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9821:9815));
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						t = board.getTile(m);
@@ -141,9 +141,9 @@ public class Piece {
 						if (!m.equals(piece.location) && board.diagonalLineOfSightClear(piece.location, m) && t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(new Move(game, game.getBoard(), piece, t.getLocale()))))){
 							if (board.diagonalLineOfSightClear(piece.location, m)){
-								if (t.containsEnemy(piece))
+								if (t.containsEnemy(piece.getTeam()))
 									piece.attackedPieces.add(t.getOccupator());
 								return true;
 							}
@@ -157,7 +157,7 @@ public class Piece {
 				this.value = 18;
 				this.symbol = "Q";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9819:9813));
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
@@ -166,9 +166,9 @@ public class Piece {
 							&& t.containsFriendly(piece))
 								if (!protectedPieces.contains(t.getOccupator())) piece.protectedPieces.add(t.getOccupator());
 
-						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(piece, t.getLocale())))){
+						if (!m.equals(piece.location) && t.available(piece) && (!team.inCheck() || (team.inCheck() && team.canMoveWhenChecked(new Move(game, game.getBoard(), piece, t.getLocale()))))){
 							if (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m)){
-								if (t.containsEnemy(piece))
+								if (t.containsEnemy(piece.getTeam()))
 									piece.attackedPieces.add(t.getOccupator());
 								return true;
 							}
@@ -182,7 +182,7 @@ public class Piece {
 				this.value = 20;
 				this.symbol = "K";
 				this.unicodeSymbol = new String(Character.toChars(c.equals(Game.Color.BLACK)?9818:9812));
-				this.moveSet = new MoveSet(board, d, this){
+				this.moveSet = new MoveSet(game, d, this){
 					@Override
 					public boolean isValidMove(Location m){
 						Board.Tile t = board.getTile(m);
@@ -195,7 +195,7 @@ public class Piece {
 
 						if (!m.equals(piece.location) && t.available(piece)){
 							
-							if (t.containsEnemy(piece) && t.getOccupator().defenderCount > 0)
+							if (t.containsEnemy(piece.getTeam()) && t.getOccupator().defenderCount > 0)
 								return false;
 
 							// this will put the King into check, thus is not legal move
@@ -224,7 +224,7 @@ public class Piece {
 							}
 	
 							if ((xDiff<2&&yDiff<2) && (board.diagonalLineOfSightClear(piece.location, m) || board.cardinalLineOfSightClear(piece.location, m))){
-								if (t.containsEnemy(piece))
+								if (t.containsEnemy(piece.getTeam()))
 									piece.attackedPieces.add(t.getOccupator());
 								return true;
 							}
@@ -279,7 +279,7 @@ public class Piece {
 				// switch pawn to queen once across board
 				if (ofType(Game.PieceType.PAWN) && (dest.y == ((moveSet.dir>0)?7:0))){
 					kill();
-					Piece newQueen = new Piece(game, team, Game.PieceType.QUEEN, color, moveSet.dir, dest);
+					Piece newQueen = new Piece(game, board, team, Game.PieceType.QUEEN, color, moveSet.dir, dest);
 					team.addToPieceSet(newQueen);
 					return true;
 				}
@@ -314,7 +314,7 @@ public class Piece {
 	public void revive(){
 		this.killed = false;
 		board.getTile(location).setOccupator(this);
-	    team.getPieceSet().add(this);	
+	    team.getPieceSet().add(this);
 	}
 
 	public boolean isDead(){
@@ -356,6 +356,10 @@ public class Piece {
 		return (symbol.equalsIgnoreCase(s) || unicodeSymbol.equals(s));
 	}
 
+	public int getMoveSetDir(){
+		return this.moveSet.dir;
+	}
+
 	public Object[] getMoves(){
 		return moveList.toArray();
 	}
@@ -364,7 +368,7 @@ public class Piece {
 		return moveSet.movesMade;
 	}
 
-	public List<Location> getMoveList(){
+	public List<Move> getMoveList(){
 		return moveList;
 	}
 
@@ -373,8 +377,8 @@ public class Piece {
 	}
 
 	public boolean hasCheck(){
-		for (Location move : moveSet.getValidMoves())
-			if (board.getTile(move).containsEnemy(this) && board.getTile(move).getOccupator().ofType(Game.PieceType.KING))
+		for (Move move : moveSet.getValidMoves())
+			if (move.destTile.containsEnemyOfType(getTeam(), Game.PieceType.KING))
 				return true;
 		return false;
 	}
@@ -387,13 +391,13 @@ public class Piece {
 	* @param simulatedEnemyLocation the location for the enemy piece to be simulated at
 	* @return whether this piece holds check when there is an enemy piece at this location. 
 	*/
-	public boolean canCheck(Piece movedPiece, Location simulatedEnemyLocation){
-		return board.runMoveSimulation(new Board.MoveSimulation<Boolean>(this, movedPiece, simulatedEnemyLocation){
+	public boolean canCheck(Move enemyMove){
+		return (new Simulator<Boolean>(enemyMove, this){
 			@Override
-			public Boolean getSimulationData(){
-				return dataPiece.hasCheck();
+			public Boolean getData(){
+				return ((Piece)data[0]).hasCheck();
 			}
-		});
+		}).simulate();
 	}
 
 	/**
@@ -401,7 +405,7 @@ public class Piece {
 	* 
 	* @return list of possible moves for a simulated piece location
 	*/
-	public List<Location> getSimulatedMoves(Location simulatedPieceLocation){
+	public List<Move> getSimulatedMoves(Location simulatedPieceLocation){
 		if (simulatedPieceLocation.equals(location)) 
 			return moveList;
 
@@ -410,7 +414,7 @@ public class Piece {
 			Location orgLoc = this.location;
 			this.location = simulatedPieceLocation;
 
-			List<Location> potentialMoves = moveSet.getValidMoves();
+			List<Move> potentialMoves = moveSet.getValidMoves();
 			
 			this.location = orgLoc;
 
@@ -421,26 +425,28 @@ public class Piece {
 	}
 
 	private abstract class MoveSet {
+		private Game game;
 		public Board board;
 		Board.Tile t;
 		public int dir;
 		public Piece piece;
 		public List<Location> movesMade = new ArrayList<Location>();
 
-		public MoveSet(Board b, int d, Piece p){
-			this.board = b;
+		public MoveSet(Game g, int d, Piece p){
+			this.game = g;
+			this.board = game.getBoard();
 			this.dir = d;
 			this.piece = p;
 		}
 		
 		public abstract boolean isValidMove(Location m);
 
-		public List<Location> getValidMoves(){
-		 	List<Location> mList = new ArrayList<Location>();
+		public List<Move> getValidMoves(){
+		 	List<Move> mList = new ArrayList<Move>();
 			for (Board.Tile[] tr : board.getBoardState()){
 				for (Board.Tile t : tr){
 					if (isValidMove(t.getLocale()))
-						mList.add(t.getLocale());
+						mList.add(new Move(game, game.getBoard(), piece, t.getLocale()));
 				}
 			}
 			return mList;
@@ -449,6 +455,6 @@ public class Piece {
 
 	@Override
 	public String toString(){
-		return ((Game.unicode)?unicodeSymbol:symbol)+"|"+location;
+		return ((Game.unicode)?unicodeSymbol:symbol)+" "+location;
 	}
 }

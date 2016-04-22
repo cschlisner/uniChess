@@ -50,11 +50,11 @@ public class Game {
 		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster", (p1Name!=null), Color.WHITE);
 		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster", (p2Name!=null), Color.BLACK);
 
-		gameLog.logBoard();
 		gameLog.writeBuffer(String.format("New game started between %s and %s.", player1, player2));
-		if (!imageOut) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
-
-		getCurrentPlayer().getTeam().updateStatus();
+		gameLog.logBoard();
+		try {
+			getCurrentPlayer().getTeam().updateStatus();
+		} catch (GameException e){};
 
 	}
 
@@ -83,9 +83,8 @@ public class Game {
 			e.printStackTrace();
 			return;
 		}
-	    gameLog.logBoard();
 		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.toString(), player2.toString()));
-		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
+	    gameLog.logBoard();
 	}
 
 	public String getId(){
@@ -100,60 +99,120 @@ public class Game {
 	boolean endTurn = true;
 
 	public void input(String in, boolean logMove){
-		endTurn = getCurrentPlayer().readMove(in);
+		// endTurn = getCurrentPlayer().readMove(in);
 		
-		getDormantPlayer().getTeam().updateStatus();
+		// getDormantPlayer().getTeam().updateStatus();
 
-		if (endTurn){
-			if (logMove) gameLog.appendMoveHistory(in);
+		// if (endTurn){
+		// 	if (logMove) gameLog.appendMoveHistory(in);
+		// 	++turnCount;
+		// }
+
+		// if (player1.draw && player2.draw){
+		// 	endGame(null, "Draw");
+		// 	return;
+		// }
+
+
+		// if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
+		// 	gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
+		// 	getCurrentPlayer().draw = false;
+		// 	drawOfferTurn = -1;
+		// }
+
+		// if (getCurrentPlayer().draw && (drawOfferTurn < 0) && endTurn){
+		// 	drawOfferTurn = turnCount;
+		// 	gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input draw to accept.");
+		// }
+
+		// if (getDormantPlayer().getTeam().inCheck()){
+		// 	gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
+		// 	getDormantPlayer().readTeamStatus();
+		// }
+
+		// if (getDormantPlayer().getTeam().inCheckMate()){
+		// 	endGame(getCurrentPlayer(), "Checkmate");
+		// 	return;
+		// }
+
+		// if (gameInStaleMate(getCurrentPlayer())){
+		// 	endGame(null, "Stalemate");
+		// 	return;
+		// }
+
+		// if (getCurrentPlayer().forfeit){
+		// 	endGame(getDormantPlayer(), "Forfeit");
+		// 	return;
+		// }
+
+		// whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
+
+		// // getCurrentPlayer().readTeamStatus();
+
+		// if (!getCurrentPlayer().isHuman && logMove)
+		// 	input(getCurrentPlayer().getBotMoveText(), true);
+	}
+
+	public void advance(String in, boolean logMove){
+		try {
+			getCurrentPlayer().readMove(in);
+			getDormantPlayer().getTeam().updateStatus();
+
 			++turnCount;
-		}
 
-		if (player1.draw && player2.draw){
-			endGame(null, "Draw");
+
+			if (player1.draw && player2.draw){
+				endGame(null, "Draw");
+				return;
+			}
+
+
+			if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
+				gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
+				getCurrentPlayer().draw = false;
+				drawOfferTurn = -1;
+			}
+
+			if (getCurrentPlayer().draw && (drawOfferTurn < 0) && endTurn){
+				drawOfferTurn = turnCount;
+				gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input \'draw\' to accept.");
+			}
+
+			if (getDormantPlayer().getTeam().inCheck()){
+				gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
+				getDormantPlayer().readTeamStatus();
+			}
+
+			whiteTurn = !whiteTurn;
+			if (logMove){
+				gameLog.appendMoveHistory(in);
+				gameLog.logBoard();
+			}
+
+			if (!getCurrentPlayer().isHuman && logMove)
+				advance(getCurrentPlayer().getBotMoveText(), true);
+		} catch (GameException e){
+			e.writeMessagesToLog();
+			switch (e.getType()){
+				case GameException.INPUT:
+					if (!in.equalsIgnoreCase("status")){
+						gameLog.writeBuffer("Status: ");
+						getCurrentPlayer().readTeamStatus();
+					}
+					gameLog.logBoard();
+					break;
+				case GameException.CHECKMATE:
+					endGame(getCurrentPlayer(), "checkmate");
+					break;
+				case GameException.FORFEIT:
+					endGame(getDormantPlayer(), "forfeit");
+					break;
+				case GameException.STALEMATE: 
+					endGame(getDormantPlayer(), "stalemate");
+					break;
+			}
 			return;
 		}
-
-
-		if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
-			gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
-			getCurrentPlayer().draw = false;
-			drawOfferTurn = -1;
-		}
-
-		if (getCurrentPlayer().draw && (drawOfferTurn < 0) && endTurn){
-			drawOfferTurn = turnCount;
-			gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input draw to accept.");
-		}
-
-		if (getDormantPlayer().getTeam().inCheck()){
-			gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
-			getDormantPlayer().readTeamStatus();
-		}
-
-		if (getDormantPlayer().getTeam().inCheckMate()){
-			endGame(getCurrentPlayer(), "Checkmate");
-			return;
-		}
-
-		if (gameInStaleMate(getCurrentPlayer())){
-			endGame(null, "Stalemate");
-			return;
-		}
-
-		if (getCurrentPlayer().forfeit){
-			endGame(getDormantPlayer(), "Forfeit");
-			return;
-		}
-
-		whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
-
-		// getCurrentPlayer().readTeamStatus();
-		gameLog.logBoard();
-		if (!gameLog.isImageOut()) gameLog.writeBuffer("Turn: "+getCurrentPlayer().toString());
-
-		if (!getCurrentPlayer().isHuman && logMove)
-			input(getCurrentPlayer().getBotMoveText(), true);
 	}
 
 	public BufferedImage getBoardImage(){
@@ -178,6 +237,10 @@ public class Game {
 
 	public Player getDormantPlayer(){
 		return (!whiteTurn)?player1:player2;
+	}
+
+	public Player getPlayer(Color c){
+		return (c == Color.WHITE)?player1:player2;
 	}
 
 	public int getTurnCount(){
@@ -212,7 +275,7 @@ public class Game {
 		if (moves != null){
 			for (String m : moves){
 				//getInfoOutput();
-				input(m, false);
+				advance(m, false);
 			}
 		}
 	}

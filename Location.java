@@ -16,7 +16,7 @@ public class Location {
 			this.x = col.indexOf(in.charAt(0));
 			this.y = row.indexOf(in.charAt(1));
 		} catch (IndexOutOfBoundsException e){
-			throw new GameException("Could not parse location: "+in);
+			throw new GameException(GameException.INPUT, "Could not parse location from '"+in+"'");
 		}
 	}
 
