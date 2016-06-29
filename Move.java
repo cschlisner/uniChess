@@ -4,17 +4,30 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Move {
-	public Game game;
-	public Board board;
-	
-	public Piece piece, destPiece;
-	public Location dest, pieceLocale;
+	public boolean ENPASSE, QCASTLE, KCASTLE;
 
-	public Board.Tile pieceTile, destTile;
-	
-	public Move(Game g, Board b, Team t, String in) throws GameException {
-		String[] tokens = in.split("");
+	public Location origin, destination;
+	public Board b;
 
+	public Move(Location a, Location b){
+		origin = a;
+		destination = b;
+	}
+
+	@Override
+	public boolean equals(Object o){
+		if (o instanceof Move){
+			Move om = (Move)o;
+			return (om.origin.equals(this.origin) && om.destination.equals(this.destination));
+		}
+		return false;
+	}
+
+	public static Move parseMove(Board board, Game.Color color, String in) throws GameException{
+    	if (in.length() == 2)
+    		in = "p"+in;
+    	
+    	String[] tokens = in.split("");
 		String pieceSymbol = tokens[0];
 
 		int rank = -1, file = -1;
@@ -25,12 +38,12 @@ public class Move {
 			if (Character.isLetter(mysteryToken)){
 				file = "abcdefgh".indexOf(mysteryToken);
 				if (file < 0)
-					throw new GameException(GameException.INPUT, "Invalid move.");
+					throw new GameException(GameException.INVALID_MOVE, "Invalid move.");
 			}
 			else if (Character.isDigit(mysteryToken)){
 				rank = Character.getNumericValue(mysteryToken)-1;
 				if (rank < 0 || rank > 7)
-					throw new GameException(GameException.INPUT, "Invalid move.");
+					throw new GameException(GameException.INVALID_MOVE, "Invalid move.");
 			}
 		}
 
@@ -39,85 +52,71 @@ public class Move {
 			file = "abcdefgh".indexOf(tokens[1].toLowerCase().charAt(0));
 			rank = Character.getNumericValue(tokens[2].charAt(0))-1;
 			if ((file < 0) || (rank < 0 || rank > 7))
-				throw new GameException(GameException.INPUT, "Invalid move.");
+				throw new GameException(GameException.INVALID_MOVE, "Invalid move.");
 		}
 
-		dest = new Location(tokens[tokens.length-2]+tokens[tokens.length-1]);
+		Location dest;
+		try {
+			dest = new Location(tokens[tokens.length-2]+tokens[tokens.length-1]);
+		} catch(ArrayIndexOutOfBoundsException e){
+			throw new GameException(GameException.INVALID_MOVE, "Invalid move.");
+		}
+	// System.out.format("pieceSymbol: %s\ndest: %s\n", pieceSymbol, dest);
 
-		List<Piece> potentialPieces = new ArrayList<Piece>();
-		for (Piece p : t.getPieceSet()){
-			if (p.ofType(pieceSymbol) && p.canMove(dest)){
-				if (((rank < 0 ^ p.getLocation().y == rank)) && ((file < 0 ^ p.getLocation().x == file))) // if the rank or file have been specified, add only matching pieces
-					potentialPieces.add(p);
+		List<Board.Tile> potentialLocations = new ArrayList<>();
+
+		for (Board.Tile t : board.getTileList()){
+			
+			Piece p = t.getOccupator();
+
+			if (p == null || !p.color.equals(color))
+				continue;
+			
+			if (p.ofType(pieceSymbol) && board.isValidMove(new Move(t.getLocale(), dest))){
+				if (((rank < 0 ^ t.getLocale().y == rank)) && ((file < 0 ^ t.getLocale().x == file))) // if the rank or file have been specified, add only matching pieces
+					potentialLocations.add(t);
 			}
 		}
 
-		if (potentialPieces.size() == 1){
-			game = g;
-			board = b;
-			piece = potentialPieces.get(0);
-			destTile = board.getTile(dest);
-			destPiece = destTile.getOccupator();
-			pieceLocale = piece.getLocation();
-			pieceTile = board.getTile(piece.getLocation());
+		if (potentialLocations.size() == 1){
+			Move m = new Move(potentialLocations.get(0).getLocale(), dest);
+			board.isValidMove(m); // adds special move flags
+			m.b = board;
+			return m;
 		}
 
-		if (potentialPieces.size() < 1)
-			throw new GameException(GameException.INPUT, "Invalid move.");
+		if (potentialLocations.size() < 1)
+			throw new GameException(GameException.INVALID_MOVE, "Invalid move.");
 
-		if (potentialPieces.size() > 1){
-			boolean specF=false, specR=false;
-			for (Piece p : potentialPieces){
-				for (Piece q : potentialPieces){
-					if (p.getLocation().x != q.getLocation().x)
-						specF = true;
-					if (!specF && p.getLocation().y != q.getLocation().y)
-						specR = true;
-				}
-			}
+		if (potentialLocations.size() > 1){
+			// boolean specF=false, specR=false;
+			// for (Board.Tile t : potentialLocations){
+			// 	for (Board.Tile u : potentialLocations){
+			// 		if (t.getLocale().x != u.getLocale().x)
+			// 			specF = true;
+			// 		if (!specF && t.getLocale().y != u.getLocale().y)
+			// 			specR = true;
+			// 	}
+			// }
 
-			String[] msg = new String[potentialPieces.size()+1];
-			int i = 0;
-			msg[i++] = "Ambiguous move. Options:";
-			for (Piece p : potentialPieces)
-				msg[i++] = String.format("%d. %s%s%s%s",i-1,p.getSymbol(),(specF?p.getLocation().toString().charAt(0):""),(specR?p.getLocation().y:""),dest.toString());
-			throw new GameException(GameException.INPUT, msg);
+			// String[] msg = new String[potentialLocations.size()+1];
+			// int i = 0;
+			// msg[i++] = "Ambiguous move. Options:";
+			// for (Board.Tile t : potentialLocations){
+			// 	Piece p = t.getOccupator();
+			// 	msg[i++] = String.format("%d. %s%s%s%s", i-1, p.getSymbol(true), (specF?t.getLocale().toString().charAt(0):""), (specR?t.getLocale().y:""), dest.toString());
+			// }
+			throw new GameException(GameException.AMBIGUOUS_MOVE, "yep");
 		}
-	}
+		return null;
+    }
 
-	public Move(Game g, Board b, Piece p, Location d){
-		game = g;
-		board = b;
-		piece = p;
-		dest = d;
-		if (dest != null){
-			destTile = board.getTile(dest);
-			destPiece = destTile.getOccupator();
-		}
-		pieceLocale = piece.getLocation();
-		pieceTile = board.getTile(piece.getLocation());
-	}
-
-	public void attempt() throws GameException{
-		if (!piece.moveTo(dest))
-			throw new GameException(GameException.INPUT, "Invalid move.");
-	}
-
-	@Override 
-	public boolean equals(Object o){
-		if (o instanceof Move){
-			Move om = (Move)o;
-			return (this.game == om.game && this.piece == om.piece && this.dest.equals(om.dest));
-		}
-		else return false;
-	}
-
-	@Override
+    @Override
 	public String toString(){
-		return String.format("%s > %s", piece, dest);
+		return String.format("%s > %s", b.getTile(origin).getOccupator(), destination);
 	}
 
 	public String getANString(){
-		return String.format("%s%s%s", piece.getSymbol().toLowerCase(), pieceLocale, dest);
+		return String.format("%s%s%s", b.getTile(origin).getOccupator().getSymbol(false).toLowerCase(), origin, destination);
 	}
 }

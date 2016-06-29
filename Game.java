@@ -2,281 +2,117 @@ package uniChess;
 
 import org.json.*;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import java.awt.image.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Game {
-	public static Log gameLog;
-
-	public static boolean unicode;
-
-	private static Board board;
-	
-	public Player player1, player2;
-
+	public static enum GameEvent {OK, AMBIGUOUS, INVALID, ILLEGAL, CHECK, CHECKMATE, STALEMATE, DRAW;}
 	public static enum PieceType {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING;}
 	public static enum Color {WHITE, BLACK;}
+	public static boolean unicode = true;
+	public boolean whiteMove = true;
+	private List<Board> boards = new ArrayList<>();
 
-	private static boolean whiteTurn = true;
-	private static boolean dead = false; 
-	
-	private static int turnCount = 0, drawOfferTurn = -1;
-	
-	private static String gameId;
+	public Player white, black;
 
+	public Game(Player player1, Player player2){
+		white = (player1.color.equals(Color.WHITE) ? player1 : player2);
+		black = (player1.color.equals(Color.WHITE) ? player2 : player1); 
 
-	public Game(String p1Name, String p2Name){
-		this(p1Name, p2Name, false, null, false);
-	}
-	public Game(String p1Name, String p2Name, boolean uncd){
-		this(p1Name, p2Name, false, null, uncd);
-	}
-	
-	public Game(String p1Name, String p2Name, boolean imageOut, String imageFileOut, boolean uncd){
+		boards.add(new Board());
 
-		Date now = new Date();
-		SimpleDateFormat sdf = new SimpleDateFormat("kms");
-
-		gameId = String.format("%c%c%s",((p1Name!=null)?p1Name.charAt(0):'C'), ((p2Name!=null)?p2Name.charAt(0):'C'), sdf.format(now));
-
-		board = new Board();
-
-		gameLog = new Log(this, imageOut, imageFileOut);
-
-		unicode = uncd;
-
-		player1 = new Player(this, (p1Name!=null)?p1Name:"Chesster", (p1Name!=null), Color.WHITE);
-		player2 = new Player(this, (p2Name!=null)?p2Name:"Chesster", (p2Name!=null), Color.BLACK);
-
-		gameLog.writeBuffer(String.format("New game started between %s and %s.", player1, player2));
-		gameLog.logBoard();
-		try {
-			getCurrentPlayer().getTeam().updateStatus();
-		} catch (GameException e){};
-
+		getCurrentBoard().printSelf(!whiteMove);
 	}
 
-	public Game(String gameFile){
-		board = new Board();
-		gameFile+=((gameFile.contains(".chess"))?"":".chess");
-		try {
-			JSONObject gameData = Log.importGame(gameFile);
-
-			player1 = new Player(this, gameData.getString("player1"), gameData.getBoolean("player1Human"), Color.WHITE);
-			player2 = new Player(this, gameData.getString("player2"), gameData.getBoolean("player2Human"), Color.BLACK);
-			
-			gameId = gameData.getString("id");
-
-			gameLog = new Log(this, gameData.getBoolean("imageOutput"), gameData.optString("imageExportFile"));
-
-			unicode = gameData.getBoolean("unicode");
-			
-			JSONArray jsonMoveArray = gameData.getJSONArray("moves");
-
-		    for (int i = 0; i < jsonMoveArray.length(); ++i)
-		    	gameLog.appendMoveHistory(jsonMoveArray.getString(i));
-		    performMoves(gameLog.getMoveHistory());
-		} catch (Exception e){
-			System.out.println("Error importing game file: "+gameFile);
-			e.printStackTrace();
-			return;
-		}
-		gameLog.writeBuffer(String.format("Game %s continued between %s and %s.", gameId, player1.toString(), player2.toString()));
-	    gameLog.logBoard();
+	public List<Board> getBoardList(){
+		return boards;
 	}
 
-	public String getId(){
-		return gameId;
+	public void setcurrentBoard(Board board){
+		boards.add(board);
 	}
 
-	public void input(String in){
-		input(in, true);
-	}
-
-
-	boolean endTurn = true;
-
-	public void input(String in, boolean logMove){
-		// endTurn = getCurrentPlayer().readMove(in);
-		
-		// getDormantPlayer().getTeam().updateStatus();
-
-		// if (endTurn){
-		// 	if (logMove) gameLog.appendMoveHistory(in);
-		// 	++turnCount;
-		// }
-
-		// if (player1.draw && player2.draw){
-		// 	endGame(null, "Draw");
-		// 	return;
-		// }
-
-
-		// if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
-		// 	gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
-		// 	getCurrentPlayer().draw = false;
-		// 	drawOfferTurn = -1;
-		// }
-
-		// if (getCurrentPlayer().draw && (drawOfferTurn < 0) && endTurn){
-		// 	drawOfferTurn = turnCount;
-		// 	gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input draw to accept.");
-		// }
-
-		// if (getDormantPlayer().getTeam().inCheck()){
-		// 	gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
-		// 	getDormantPlayer().readTeamStatus();
-		// }
-
-		// if (getDormantPlayer().getTeam().inCheckMate()){
-		// 	endGame(getCurrentPlayer(), "Checkmate");
-		// 	return;
-		// }
-
-		// if (gameInStaleMate(getCurrentPlayer())){
-		// 	endGame(null, "Stalemate");
-		// 	return;
-		// }
-
-		// if (getCurrentPlayer().forfeit){
-		// 	endGame(getDormantPlayer(), "Forfeit");
-		// 	return;
-		// }
-
-		// whiteTurn = (endTurn)?!whiteTurn:whiteTurn;
-
-		// // getCurrentPlayer().readTeamStatus();
-
-		// if (!getCurrentPlayer().isHuman && logMove)
-		// 	input(getCurrentPlayer().getBotMoveText(), true);
-	}
-
-	public void advance(String in, boolean logMove){
-		try {
-			getCurrentPlayer().readMove(in);
-			getDormantPlayer().getTeam().updateStatus();
-
-			++turnCount;
-
-
-			if (player1.draw && player2.draw){
-				endGame(null, "Draw");
-				return;
-			}
-
-
-			if (drawOfferTurn > 0 && getCurrentPlayer().draw && endTurn){
-				gameLog.writeBuffer("Draw offer from "+getCurrentPlayer()+" has expired.");
-				getCurrentPlayer().draw = false;
-				drawOfferTurn = -1;
-			}
-
-			if (getCurrentPlayer().draw && (drawOfferTurn < 0) && endTurn){
-				drawOfferTurn = turnCount;
-				gameLog.writeBuffer(getCurrentPlayer()+" has offered a draw. Input \'draw\' to accept.");
-			}
-
-			if (getDormantPlayer().getTeam().inCheck()){
-				gameLog.writeBuffer(getDormantPlayer()+" is in check!\nAvailable moves:");
-				getDormantPlayer().readTeamStatus();
-			}
-
-			whiteTurn = !whiteTurn;
-			if (logMove){
-				gameLog.appendMoveHistory(in);
-				gameLog.logBoard();
-			}
-
-			if (!getCurrentPlayer().isHuman && logMove)
-				advance(getCurrentPlayer().getBotMoveText(), true);
-		} catch (GameException e){
-			e.writeMessagesToLog();
-			switch (e.getType()){
-				case GameException.INPUT:
-					if (!in.equalsIgnoreCase("status")){
-						gameLog.writeBuffer("Status: ");
-						getCurrentPlayer().readTeamStatus();
-					}
-					gameLog.logBoard();
-					break;
-				case GameException.CHECKMATE:
-					endGame(getCurrentPlayer(), "checkmate");
-					break;
-				case GameException.FORFEIT:
-					endGame(getDormantPlayer(), "forfeit");
-					break;
-				case GameException.STALEMATE: 
-					endGame(getDormantPlayer(), "stalemate");
-					break;
-			}
-			return;
-		}
-	}
-
-	public BufferedImage getBoardImage(){
-		return gameLog.getBoardImage();
-	}
-
-	public String getInfoOutput(){
-		return gameLog.getUnreadBuffer();
-	}
-
-	public boolean isCurrentPlayer(Player p){
-		return isCurrentPlayer(p.toString());
-	}
-
-	public boolean isCurrentPlayer(String user){
-		return (getCurrentPlayer().toString().equals(user));
+	public Board getCurrentBoard(){
+		return boards.get(boards.size()-1);
 	}
 
 	public Player getCurrentPlayer(){
-		return (whiteTurn)?player1:player2;
+		return whiteMove ? white : black;
 	}
 
 	public Player getDormantPlayer(){
-		return (!whiteTurn)?player1:player2;
+		return whiteMove ? black : white;
 	}
 
-	public Player getPlayer(Color c){
-		return (c == Color.WHITE)?player1:player2;
-	}
+	public GameEvent advance(String in){
+		try {
 
-	public int getTurnCount(){
-		return turnCount;
-	}
+			if (white.draw && black.draw)
+				return GameEvent.DRAW;
 
-	public Board getBoard(){
-		return board;
-	}
+			Move move = Move.parseMove(getCurrentBoard(), getCurrentPlayer().color, in);
+			
+			List<Move> legal = getLegalMoves();
+			
+			if (!legal.contains(move))
+				return GameEvent.ILLEGAL;
 
-	private static boolean gameInStaleMate(Player p){
-		return (!p.getTeam().inCheck() && p.getTeam().getMoveMap().size()==0);
-	}
+			boards.add(getCurrentBoard().performMove(move));
 
-	private static void endGame(Player winner, String result){
-		gameLog.logBoard();
-		gameLog.writeBuffer("Game ended in "+result);
-		if (winner != null) 
-			gameLog.writeBuffer(winner+" wins!");
-		dead = true;
-	}
+			whiteMove = !whiteMove;
 
-	public static boolean isDead(){
-		return dead;
-	}
+			if (dormantPlayerHasCheck() && getLegalMoves().isEmpty())
+				return GameEvent.CHECKMATE;
 
-	public boolean saveGame(){
-		return gameLog.saveGame();
-	}
+			else if (getLegalMoves().isEmpty())
+				return GameEvent.STALEMATE;
 
-	private void performMoves(List<String> moves){
-		if (moves != null){
-			for (String m : moves){
-				//getInfoOutput();
-				advance(m, false);
-			}
+			else if (dormantPlayerHasCheck())
+				return GameEvent.CHECK;
+
+			return GameEvent.OK;
+
+		} catch (GameException ge){
+				
+				switch (ge.getType()) {
+					
+					case GameException.INVALID_MOVE:
+						return GameEvent.INVALID;
+					
+					case GameException.AMBIGUOUS_MOVE:
+						return GameEvent.AMBIGUOUS;	
+
+				}
 		}
+
+	}
+
+	private boolean dormantPlayerHasCheck(Board board){
+		// Tests for Move-into-Check. That is, a piece on the team-to-move is able to capture a king.
+		Piece p;
+		for (Move m : board.getValidMoves(getDormantPlayer().color)){
+			p = board.getTile(m.destination).getOccupator();
+			if (p != null && p.ofType(PieceType.KING))
+				return true;
+		}
+		return false;
+	}
+
+	public List<Move> getLegalMoves() throws GameException{
+		List<Move> validMoves = getCurrentBoard().getValidMoves(getCurrentPlayer().color);
+		List<Move> legalMoves = new ArrayList<>();
+		for (Move m : validMoves){
+			
+			if (!dormantPlayerHasCheck(getCurrentBoard().performMove(m)))
+				legalMoves.add(m);
+
+		}
+
+		return legalMoves;
 	}
 }
