@@ -2,7 +2,6 @@ package uniChess;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Board {
 	private Tile[][] state = new Tile[8][8];

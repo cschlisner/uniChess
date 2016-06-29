@@ -1,14 +1,7 @@
 package uniChess;
 
-import org.json.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import java.awt.image.*;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Game {
 	public static enum GameEvent {OK, AMBIGUOUS, INVALID, ILLEGAL, CHECK, CHECKMATE, STALEMATE, DRAW;}
