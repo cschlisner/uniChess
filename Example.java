@@ -10,8 +10,8 @@ class Example {
 		Player<String> p1 = new Player<>("player one", Game.Color.WHITE);
 		Player<String> p2 = new Player<>("player two", Game.Color.BLACK);
 
-		Game chessGame = new Game(p1, p2, args[0]);
-
+		Game chessGame = new Game(p1, p2);
+		Game.unicode = false;
 		System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
 		
 		while (true){
@@ -38,7 +38,6 @@ class Example {
 				}
 
 				System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
-				System.out.println(chessGame.getGameString());
 		}
 
 	}
