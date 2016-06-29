@@ -1,4 +1,4 @@
-import uniChessBeta.*;
+import uniChess.*;
 
 import java.util.*;
 import java.io.*;
@@ -10,7 +10,7 @@ class Example {
 		Player<String> p1 = new Player<>("player one", Game.Color.WHITE);
 		Player<String> p2 = new Player<>("player two", Game.Color.BLACK);
 
-		Game chessGame = new Game(p1, p2);
+		Game chessGame = new Game(p1, p2, args[0]);
 
 		System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
 		
@@ -18,26 +18,27 @@ class Example {
 
 				switch(chessGame.advance(in.nextLine())){
 
-					case Game.GameEvent.OK:
+					case OK:
 						break;
-					case Game.GameEvent.AMBIGUOUS:
+					case AMBIGUOUS:
 						break;
-					case Game.GameEvent.INVALID:
+					case INVALID:
 						break; 
-					case Game.GameEvent.ILLEGAL:
+					case ILLEGAL:
 						break;
-					case Game.GameEvent.CHECK:
+					case CHECK:
 						break;
-					case Game.GameEvent.CHECKMATE:
+					case CHECKMATE:
 						break;
-					case Game.GameEvent.STALEMATE:
+					case STALEMATE:
 						break;
-					case Game.GameEvent.DRAW:
+					case DRAW:
 						break;
 
 				}
 
 				System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
+				System.out.println(chessGame.getGameString());
 		}
 
 	}
