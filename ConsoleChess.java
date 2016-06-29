@@ -3,7 +3,7 @@ import uniChess.*;
 import java.util.*;
 import java.io.*;
 
-class Example {
+class ConsoleChess {
 	public static void main(String[] args) {
 		Scanner in = new Scanner(System.in);
 
@@ -16,28 +16,39 @@ class Example {
 		
 		while (true){
 
-				switch(chessGame.advance(in.nextLine())){
+				Game.GameEvent gameResponse = chessGame.advance(in.nextLine());
+
+				System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
+				
+				switch(gameResponse){
 
 					case OK:
 						break;
 					case AMBIGUOUS:
+						System.out.println("Ambiguous Move.");
 						break;
 					case INVALID:
+						System.out.println("Invalid Move.");
 						break; 
 					case ILLEGAL:
+						System.out.println("Illegal Move.");					
 						break;
 					case CHECK:
+						System.out.println("You are in check!");
 						break;
 					case CHECKMATE:
+						System.out.println("Checkmate. "+chessGame.getDormantPlayer().getID()+" wins!");
+						System.exit(0);
 						break;
 					case STALEMATE:
+						System.out.println("Stalemate. "+chessGame.getDormantPlayer().getID()+" wins!");
 						break;
 					case DRAW:
+						System.out.println("Draw!");
 						break;
 
 				}
 
-				System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
 		}
 
 	}
