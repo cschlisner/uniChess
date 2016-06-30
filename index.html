@@ -1,33 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-
     <title>Unichess by cschlisner</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
-
   <body>
-
-    <header>
-      <div class="container">
+    <div class="wrapper">
+      <header>
         <h1>Unichess</h1>
-        <h2>A general chess API for java</h2>
-
-        <section id="downloads">
-          <a href="https://github.com/cschlisner/uniChess/zipball/master" class="btn">Download as .zip</a>
-          <a href="https://github.com/cschlisner/uniChess/tarball/master" class="btn">Download as .tar.gz</a>
-          <a href="https://github.com/cschlisner/uniChess" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
-        </section>
-      </div>
-    </header>
-
-    <div class="container">
-      <section id="main_content">
+        <p>A general chess API for java</p>
+        <p class="view"><a href="https://github.com/cschlisner/uniChess">View the Project on GitHub <small>cschlisner/uniChess</small></a></p>
+        <ul>
+          <li><a href="https://github.com/cschlisner/uniChess/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/cschlisner/uniChess/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/cschlisner/uniChess">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
         <h1>
 <a id="unichess" class="anchor" href="#unichess" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>uniChess</h1>
 
@@ -117,9 +116,9 @@
 
 <p>Will return a string representation of a board, using the Game setting for unicode chars. </p>
 
-<p><b></b></p>
-
-<pre><code>   A sample board state:
+<p id="board">
+```Java
+   A sample board state:
 
   A  B  C  D  E  F  G  H
 8|♜||♞||♝||♛||♚||♝||♞||♜|8
@@ -131,9 +130,8 @@
 2|♙||♙||♙||♙||♙||♙||♙||♙|2
 1|♖||♘||♗||♕||♔||♗||♘||♖|1
   A  B  C  D  E  F  G  H
-</code></pre>
-
-<p></p>
+```
+</p>
 
 <h4>
 <a id="thats-it" class="anchor" href="#thats-it" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>That's it!</h4>
@@ -145,7 +143,11 @@
 </h3>
       </section>
     </div>
-
+    <footer>
+      <p>Project maintained by <a href="https://github.com/cschlisner">cschlisner</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
 </html>
