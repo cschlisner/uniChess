@@ -1,11 +1,11 @@
 package uniChess;
-
+/**
+*	An Exception for input errors that also details move abiguity  
+*/
 public class GameException extends Exception {
 
-	public static final int INPUT = 0;
-	public static final int FORFEIT = 1;
-	public static final int CHECKMATE = 2;
-	public static final int STALEMATE = 3;
+	public static final int INVALID_MOVE = 0;
+	public static final int AMBIGUOUS_MOVE = 1;
 
 	private String[] messages;
 	private int type;
@@ -14,13 +14,6 @@ public class GameException extends Exception {
 		super(messageLines[0]);
 		this.type = t;
 		messages = messageLines;
-	}
-
-	public void writeMessagesToLog(){
-		Game.gameLog.startBuffer();
-		for (String ln : messages)
-			Game.gameLog.bufferAppendln(ln);
-		Game.gameLog.terminateBuffer();
 	}
 
 	public String[] getMessages(){
