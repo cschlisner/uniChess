@@ -11,7 +11,6 @@ class ConsoleChess {
 		Player<String> p2 = new Player<>("player two", Game.Color.BLACK);
 
 		Game chessGame = new Game(p1, p2);
-		Game.unicode = false;
 		System.out.print(chessGame.getCurrentBoard());
 		
 		while (true){
