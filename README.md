@@ -1,5 +1,4 @@
-# uniChess
-A minimal chess API for java
+###Detailed information can be found in the [api docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
 
 <h1>
 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
@@ -86,8 +85,8 @@ chessGame.getCurrentBoard().toString();
 
 Will return a string representation of a board, using the Game setting for unicode chars. 
 
-<b>
-```
+<p id="board">
+```Java
    A sample board state:
 
   A  B  C  D  E  F  G  H
@@ -101,10 +100,8 @@ Will return a string representation of a board, using the Game setting for unico
 1|♖||♘||♗||♕||♔||♗||♘||♖|1
   A  B  C  D  E  F  G  H
 ```
-</b>
+</p>
 
 #### That's it!
 
 You only have to write code to respond to those events and feed in moves, uniChess will do the rest. 
-
-###More information can be found in the [docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
