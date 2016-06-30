@@ -12,13 +12,13 @@ class ConsoleChess {
 
 		Game chessGame = new Game(p1, p2);
 		Game.unicode = false;
-		System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
+		System.out.print(chessGame.getCurrentBoard());
 		
 		while (true){
 
 				Game.GameEvent gameResponse = chessGame.advance(in.nextLine());
 
-				System.out.print(chessGame.getCurrentBoard().getBoardString(!chessGame.whiteMove));
+				System.out.print(chessGame.getCurrentBoard());
 				
 				switch(gameResponse){
 

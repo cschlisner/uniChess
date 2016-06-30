@@ -3,15 +3,25 @@ package uniChess;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+*	An object representing a replacement of one Tile in a Board object with another.
+*/
 public class Move {
-	public boolean ENPASSE, QCASTLE, KCASTLE;
+    /**	Boolean flag for special move type.*/
+	public boolean ENPASSE, QCASTLE, KCASTLE, PROMOTION;
 
-	public Location origin, destination;
-	public Board b;
+	/**	Location of Tile containing piece to move*/
+	public Location origin;
 
-	public Move(Location a, Location b){
+	/**	Location of Tile to move piece to*/
+	public Location destination;
+	
+	private Board board;
+
+	public Move(Location a, Location b, Board bo){
 		origin = a;
 		destination = b;
+		board = bo;
 	}
 
 	@Override
@@ -23,6 +33,16 @@ public class Move {
 		return false;
 	}
 
+	/**
+	*	Creates a Move instance from a valid Algebraic Noation string. 
+	*
+	*	@param board The board this move is to be executed on.
+	*	@param color The color of the team/player the move is to be created for
+	*	@param in The algebraic notation string detailing the move
+	*	@return A new Move instance. 
+	*	@throws GameException
+	*
+	**/
 	public static Move parseMove(Board board, Game.Color color, String in) throws GameException{
     	if (in.length() == 2)
     		in = "p"+in;
@@ -72,16 +92,15 @@ public class Move {
 			if (p == null || !p.color.equals(color))
 				continue;
 			
-			if (p.ofType(pieceSymbol) && board.isValidMove(new Move(t.getLocale(), dest))){
+			if (p.ofType(pieceSymbol) && board.isValidMove(new Move(t.getLocale(), dest, board))){
 				if (((rank < 0 ^ t.getLocale().y == rank)) && ((file < 0 ^ t.getLocale().x == file))) // if the rank or file have been specified, add only matching pieces
 					potentialLocations.add(t);
 			}
 		}
 
 		if (potentialLocations.size() == 1){
-			Move m = new Move(potentialLocations.get(0).getLocale(), dest);
+			Move m = new Move(potentialLocations.get(0).getLocale(), dest, board);
 			board.isValidMove(m); // adds special move flags
-			m.b = board;
 			return m;
 		}
 
@@ -110,13 +129,17 @@ public class Move {
 		}
 		return null;
     }
+	
+	/**
+	*	@return A full algebraic notation representation of this move, including rank and file specifiers.	
+	*/
+	public String getANString(){
+		return String.format("%s%s%s", board.getTile(origin).getOccupator().getSymbol(false).toLowerCase(), origin, destination);
+	}
 
     @Override
 	public String toString(){
-		return String.format("%s > %s", b.getTile(origin).getOccupator(), destination);
+		return String.format("%s > %s", board.getTile(origin).getOccupator(), destination);
 	}
 
-	public String getANString(){
-		return String.format("%s%s%s", b.getTile(origin).getOccupator().getSymbol(false).toLowerCase(), origin, destination);
-	}
 }

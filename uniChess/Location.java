@@ -1,5 +1,9 @@
 package uniChess;
 
+/**
+*	An object representing a point in a two dimensional grid. This is used for the internal coordinate system of the
+*	Board, as well as parsing algebraic locations to integer format. 
+*/
 public class Location {
 	int x, y;
 
@@ -15,6 +19,8 @@ public class Location {
 			final String row = "12345678";
 			this.x = col.indexOf(in.charAt(0));
 			this.y = row.indexOf(in.charAt(1));
+
+			if (x<0 || y<0) throw new IndexOutOfBoundsException("ayylmao");
 		} catch (IndexOutOfBoundsException e){
 			throw new GameException(GameException.INVALID_MOVE, "Could not parse location from '"+in+"'");
 		}
