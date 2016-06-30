@@ -81,4 +81,4 @@ switch(gameResponse){
 
 You only have to write code to respond to those events and feed in moves, uniChess will do the rest. 
 
-###More information can be found in the [docs](cschlisner.github.com/uniChess/apidocs/index.html)
+###More information can be found in the [docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
