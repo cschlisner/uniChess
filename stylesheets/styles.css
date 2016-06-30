@@ -208,6 +208,8 @@ h1, h2, h3 {
 }
 
 h1 {
+  margin: auto;
+  width: 50%;
   font-size: 28px;
 }
 

@@ -2,7 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="UTF-8">
-    <title>Unichess by cschlisner</title>
+    <title>uniChess by Cole Schlisner</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
@@ -11,31 +11,27 @@
   </head>
   <body>
     <section class="page-header">
-      <h1 class="project-name">Unichess</h1>
-      <h2 class="project-tagline">A general chess API for java</h2>
+      <h1 class="project-name">uniChess</h1>
+      <h2 class="project-tagline">A general chess API for Java</h2>
       <a href="https://github.com/cschlisner/uniChess" class="btn">View on GitHub</a>
-      <a href="https://github.com/cschlisner/uniChess/zipball/master" class="btn">Download .zip</a>
+      <a href="https://cschlisner.github.io/uniChess/apidocs/index.html" class="btn">View API documentation</a>
       <a href="https://github.com/cschlisner/uniChess/tarball/master" class="btn">Download .tar.gz</a>
     </section>
 
     <section class="main-content">
-      <h3>
-<a id="detailed-information-can-be-found-in-the-api-docs" class="anchor" href="#detailed-information-can-be-found-in-the-api-docs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Detailed information can be found in the <a href="https://cschlisner.github.io/uniChess/apidocs/index.html">api docs</a>
-</h3>
-
 <h1>
-<a id="----------------------------" class="anchor" href="#----------------------------" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>
 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
 ♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟
 <br>
 ♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
 ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
 </h1>
+</div>
 
 <hr>
 
 <h4>
-<a id="starting-a-game" class="anchor" href="#starting-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Starting a Game</h4>
+<a id="starting-a-game" class="anchor" href="#starting-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><b>Starting a Game</b></h4>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Create two Player Objects.</span>
 <span class="pl-k">Player&lt;<span class="pl-smi">String</span>&gt;</span> p1 <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-k">Player&lt;&gt;</span>(<span class="pl-s"><span class="pl-pds">"</span>player one<span class="pl-pds">"</span></span>, <span class="pl-smi">Game</span><span class="pl-k">.</span><span class="pl-smi">Color</span><span class="pl-c1"><span class="pl-k">.</span>WHITE</span>);
@@ -45,7 +41,7 @@
 <span class="pl-smi">Game</span> chessGame <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Game</span>(p1, p2);</pre></div>
 
 <h4>
-<a id="advancing-a-game" class="anchor" href="#advancing-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Advancing a game</h4>
+<a id="advancing-a-game" class="anchor" href="#advancing-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><b>Advancing a Game</b></h4>
 
 <p>To advance a game, just call chessGame.advance() with a valid <a href="https://en.wikipedia.org/wiki/Algebraic_notation_(chess)#Notation_for_moves">algebraic notation</a> string. </p>
 
@@ -70,11 +66,11 @@
     <span class="pl-c">// The input was gibberish, the turn is the same</span>
     <span class="pl-k">case</span> <span class="pl-c1">INVALID</span><span class="pl-k">:</span>
         <span class="pl-smi">System</span><span class="pl-k">.</span>out<span class="pl-k">.</span>println(<span class="pl-s"><span class="pl-pds">"</span>Invalid Move.<span class="pl-pds">"</span></span>);
-        <span class="pl-k">break</span>; 
+        <span class="pl-k">break</span>;
 
     <span class="pl-c">// The move was valid, but not legal in the current board state</span>
     <span class="pl-k">case</span> <span class="pl-c1">ILLEGAL</span><span class="pl-k">:</span>
-        <span class="pl-smi">System</span><span class="pl-k">.</span>out<span class="pl-k">.</span>println(<span class="pl-s"><span class="pl-pds">"</span>Illegal Move.<span class="pl-pds">"</span></span>);                    
+        <span class="pl-smi">System</span><span class="pl-k">.</span>out<span class="pl-k">.</span>println(<span class="pl-s"><span class="pl-pds">"</span>Illegal Move.<span class="pl-pds">"</span></span>);
         <span class="pl-k">break</span>;
 
     <span class="pl-c">// The move put the opposing player in check</span>
@@ -101,13 +97,13 @@
 }</pre></div>
 
 <h4>
-<a id="printing-a-game" class="anchor" href="#printing-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Printing a game</h4>
+<a id="printing-a-game" class="anchor" href="#printing-a-game" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><b>Printing a Game</b></h4>
 
 <div class="highlight highlight-source-java"><pre>chessGame<span class="pl-k">.</span>getCurrentBoard()<span class="pl-k">.</span>toString();</pre></div>
 
 <p>Will return a string representation of a board, using the Game setting for unicode chars. </p>
 
-<p>A sample board state:</p>
+<p><em>A sample board state:</em></p>
 
 <div class="highlight highlight-source-java"><pre>  <span class="pl-smi">A</span>  <span class="pl-smi">B</span>  <span class="pl-smi">C</span>  <span class="pl-smi">D</span>  <span class="pl-smi">E</span>  <span class="pl-smi">F</span>  <span class="pl-smi">G</span>  <span class="pl-smi">H</span>
 <span class="pl-c1">8</span><span class="pl-k">|</span>♜<span class="pl-k">||</span>♞<span class="pl-k">||</span>♝<span class="pl-k">||</span>♛<span class="pl-k">||</span>♚<span class="pl-k">||</span>♝<span class="pl-k">||</span>♞<span class="pl-k">||</span>♜<span class="pl-k">|</span><span class="pl-c1">8</span>
@@ -126,13 +122,11 @@
 <p>You only have to write code to respond to those events and feed in moves, uniChess will do the rest. </p>
 
       <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/cschlisner/uniChess">Unichess</a> is maintained by <a href="https://github.com/cschlisner">cschlisner</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+        <span class="site-footer-owner"><a href="https://github.com/cschlisner/uniChess">uniChess</a> is maintained by <a href="https://github.com/cschlisner">Cole Schlisner</a>.</span>
       </footer>
 
     </section>
 
-  
+
   </body>
 </html>
