@@ -1,9 +1,21 @@
 # uniChess
 A minimal chess API for java
-
-![Nice meme](http://i.imgur.com/bLQXHMi.jpg "Screen of ConsoleChess")
-
-
+<b>
+```
+						   A sample board state:
+						
+						  A  B  C  D  E  F  G  H
+						8|♜||♞||♝||♛||♚||♝||♞||♜|8
+						7|♟||♟||♟||♟||♟||♟||♟||♟|7
+						6| ||·|| ||·|| ||·|| ||·|6
+						5|·|| ||·|| ||·|| ||·|| |5
+						4| ||·|| ||·|| ||·|| ||·|4
+						3|·|| ||·|| ||·|| ||·|| |3
+						2|♙||♙||♙||♙||♙||♙||♙||♙|2
+						1|♖||♘||♗||♕||♔||♗||♘||♖|1
+						  A  B  C  D  E  F  G  H
+```
+</b>
 ***
 
 #### Starting a Game
