@@ -27,10 +27,9 @@
         </ul>
       </header>
       <section>
-        <h1>
-<a id="unichess" class="anchor" href="#unichess" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>uniChess</h1>
-
-<p>A minimal chess API for java</p>
+        <h3>
+<a id="detailed-information-can-be-found-in-the-api-docs" class="anchor" href="#detailed-information-can-be-found-in-the-api-docs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Detailed information can be found in the <a href="https://cschlisner.github.io/uniChess/apidocs/index.html">api docs</a>
+</h3>
 
 <h1>
 <a id="----------------------------" class="anchor" href="#----------------------------" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>
@@ -116,31 +115,23 @@
 
 <p>Will return a string representation of a board, using the Game setting for unicode chars. </p>
 
-<p id="board">
-```Java
-   A sample board state:
+<div class="highlight highlight-source-java"><pre>   <span class="pl-smi">A</span> sample board state<span class="pl-k">:</span>
 
-  A  B  C  D  E  F  G  H
-8|♜||♞||♝||♛||♚||♝||♞||♜|8
-7|♟||♟||♟||♟||♟||♟||♟||♟|7
-6| ||·|| ||·|| ||·|| ||·|6
-5|·|| ||·|| ||·|| ||·|| |5
-4| ||·|| ||·|| ||·|| ||·|4
-3|·|| ||·|| ||·|| ||·|| |3
-2|♙||♙||♙||♙||♙||♙||♙||♙|2
-1|♖||♘||♗||♕||♔||♗||♘||♖|1
-  A  B  C  D  E  F  G  H
-```
-</p>
+  <span class="pl-smi">A</span>  <span class="pl-smi">B</span>  <span class="pl-smi">C</span>  <span class="pl-smi">D</span>  <span class="pl-smi">E</span>  <span class="pl-smi">F</span>  <span class="pl-smi">G</span>  <span class="pl-smi">H</span>
+<span class="pl-c1">8</span><span class="pl-k">|</span>♜<span class="pl-k">||</span>♞<span class="pl-k">||</span>♝<span class="pl-k">||</span>♛<span class="pl-k">||</span>♚<span class="pl-k">||</span>♝<span class="pl-k">||</span>♞<span class="pl-k">||</span>♜<span class="pl-k">|</span><span class="pl-c1">8</span>
+<span class="pl-c1">7</span><span class="pl-k">|</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">||</span>♟<span class="pl-k">|</span><span class="pl-c1">7</span>
+<span class="pl-c1">6</span><span class="pl-k">|</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">|</span><span class="pl-c1">6</span>
+<span class="pl-c1">5</span><span class="pl-k">|</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">|</span><span class="pl-c1">5</span>
+<span class="pl-c1">4</span><span class="pl-k">|</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">|</span><span class="pl-c1">4</span>
+<span class="pl-c1">3</span><span class="pl-k">|</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">||</span>·<span class="pl-k">||</span> <span class="pl-k">|</span><span class="pl-c1">3</span>
+<span class="pl-c1">2</span><span class="pl-k">|</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">||</span>♙<span class="pl-k">|</span><span class="pl-c1">2</span>
+<span class="pl-c1">1</span><span class="pl-k">|</span>♖<span class="pl-k">||</span>♘<span class="pl-k">||</span>♗<span class="pl-k">||</span>♕<span class="pl-k">||</span>♔<span class="pl-k">||</span>♗<span class="pl-k">||</span>♘<span class="pl-k">||</span>♖<span class="pl-k">|</span><span class="pl-c1">1</span>
+  <span class="pl-smi">A</span>  <span class="pl-smi">B</span>  <span class="pl-smi">C</span>  <span class="pl-smi">D</span>  <span class="pl-smi">E</span>  <span class="pl-smi">F</span>  <span class="pl-smi">G</span>  <span class="pl-smi">H</span></pre></div>
 
 <h4>
 <a id="thats-it" class="anchor" href="#thats-it" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>That's it!</h4>
 
 <p>You only have to write code to respond to those events and feed in moves, uniChess will do the rest. </p>
-
-<h3>
-<a id="more-information-can-be-found-in-the-docs" class="anchor" href="#more-information-can-be-found-in-the-docs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>More information can be found in the <a href="https://cschlisner.github.io/uniChess/apidocs/index.html">docs</a>
-</h3>
       </section>
     </div>
     <footer>
