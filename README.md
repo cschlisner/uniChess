@@ -75,7 +75,12 @@ switch(gameResponse){
 		
 }
 ```
+#### Printing a game
+```Java
+chessGame.getCurrentBoard().toString();
+```
 
+Will return a string representation of a board, using the Game setting for unicode chars. 
 
 #### That's it!
 
