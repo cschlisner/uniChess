@@ -85,7 +85,6 @@ chessGame.getCurrentBoard().toString();
 
 Will return a string representation of a board, using the Game setting for unicode chars. 
 
-<p id="board">
 ```Java
    A sample board state:
 
@@ -100,7 +99,6 @@ Will return a string representation of a board, using the Game setting for unico
 1|♖||♘||♗||♕||♔||♗||♘||♖|1
   A  B  C  D  E  F  G  H
 ```
-</p>
 
 #### That's it!
 
