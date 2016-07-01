@@ -1,9 +1,12 @@
-# uniChess
-A simple chess API for java
+###Detailed information can be found in the [api docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
 
-![Nice meme](http://i.imgur.com/bLQXHMi.jpg "Screen of ConsoleChess")
-
-
+<h1>
+♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟
+<br>
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
+</h1>
 ***
 
 #### Starting a Game
@@ -75,10 +78,27 @@ switch(gameResponse){
 		
 }
 ```
+#### Printing a game
+```Java
+chessGame.getCurrentBoard().toString();
+```
 
+Will return a string representation of a board, using the Game setting for unicode chars. 
+
+A sample board state:
+```Java
+  A  B  C  D  E  F  G  H
+8|♜||♞||♝||♛||♚||♝||♞||♜|8
+7|♟||♟||♟||♟||♟||♟||♟||♟|7
+6| ||·|| ||·|| ||·|| ||·|6
+5|·|| ||·|| ||·|| ||·|| |5
+4| ||·|| ||·|| ||·|| ||·|4
+3|·|| ||·|| ||·|| ||·|| |3
+2|♙||♙||♙||♙||♙||♙||♙||♙|2
+1|♖||♘||♗||♕||♔||♗||♘||♖|1
+  A  B  C  D  E  F  G  H
+```
 
 #### That's it!
 
 You only have to write code to respond to those events and feed in moves, uniChess will do the rest. 
-
-###More information can be found in the [docs](cschlisner.github.com/uniChess/docs/index.html)
