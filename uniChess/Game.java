@@ -56,6 +56,11 @@ public class Game {
 	public Game(Player player1, Player player2){
 		white = (player1.color.equals(Color.WHITE) ? player1 : player2);
 		black = (player1.color.equals(Color.WHITE) ? player2 : player1); 
+		
+		if (white instanceof Chesster)
+			((Chesster)white).registerGame(this);
+		if (black instanceof Chesster)
+			((Chesster)black).registerGame(this);
 
 		boards.add(new Board());
 	}
@@ -114,6 +119,10 @@ public class Game {
 	*/
 	public Player getDormantPlayer(){
 		return whiteMove ? black : white;
+	}
+
+	public Player getOpponent(Player player){
+		return (getCurrentPlayer().equals(player) ? getDormantPlayer() : getCurrentPlayer());
 	}
 
 	/**
@@ -212,7 +221,7 @@ public class Game {
 		List<Move> legalMoves = new ArrayList<>();
 
 		for (Move m : validMoves)
-			if (!playerHasCheck(board.performMove(m), (getCurrentPlayer().equals(player) ? getDormantPlayer() : getCurrentPlayer())))
+			if (!playerHasCheck(board.performMove(m), getOpponent(player)))
 				legalMoves.add(m);
 
 		return legalMoves;

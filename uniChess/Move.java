@@ -8,7 +8,7 @@ import java.util.ArrayList;
 */
 public class Move {
     /**	Boolean flag for special move type.*/
-	public boolean ENPASSE, QCASTLE, KCASTLE, PROMOTION;
+	public boolean ENPASSE, QCASTLE, KCASTLE, PROMOTION, CHECKMATE;
 
 	/**	Location of Tile containing piece to move*/
 	public Location origin;
@@ -16,7 +16,7 @@ public class Move {
 	/**	Location of Tile to move piece to*/
 	public Location destination;
 	
-	private Board board;
+	public Board board;
 
 	public Move(Location a, Location b, Board bo){
 		origin = a;

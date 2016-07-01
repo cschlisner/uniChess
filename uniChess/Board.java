@@ -92,14 +92,17 @@ public class Board {
 		return state;
 	}
 
+	private String COLDIM = "\033[2m", INVCOL="\033[7m", TERMCOL = "\033[0m";
+
 	private String writeColumnLabels(int max, boolean reversed){
 		StringBuilder res = new StringBuilder();
+		res.append(" ");
 		for (int x = 0; x<9; ++x){
-			if (x>0) res.append(" ABCDEFGH".charAt((reversed)?9-x:x));
+			if (x>0) res.append(COLDIM+(" ABCDEFGH".charAt((reversed)?9-x:x)));
 			for (int k=0;k<(max-1);++k)	
 				res.append(" ");
 		}
-		res.append("\n");
+		res.append(TERMCOL+"\n");
 		return res.toString();
 	}
 
@@ -116,16 +119,16 @@ public class Board {
 		
 		int max = findMaxLen(getBoardState());
 		int y = 8;
-		res.append(writeColumnLabels(max, reversed));
+		res.append("\n"+writeColumnLabels(max, reversed)+"\n");
 		if (!reversed){
 			for (Board.Tile[] row : getBoardState()){
-				res.append(y);
+				res.append(COLDIM+y+TERMCOL+" ");
 				for (Board.Tile el : row){
 					res.append(el);
 					for (int k=0;k<((max-String.valueOf(el).length()));++k)	
-						res.append(" ");
+						res.append("  ");
 				}
-				res.append(y--+"\n");
+				res.append("  "+COLDIM+(y--)+TERMCOL+"\n");
 			}
 		} else {
 			for (int i = getBoardState().length-1; i >= 0; --i){
@@ -135,10 +138,10 @@ public class Board {
 					for (int k=0;k<((max-String.valueOf(getBoardState()[i][j]).length()));++k)	
 						res.append(" ");
 				}
-				res.append(y-i+"\n");
+				res.append(" "+COLDIM+(y-i)+TERMCOL+"\n");
 			}
 		}
-		res.append(writeColumnLabels(max, reversed));
+		res.append("\n"+writeColumnLabels(max, reversed));
 
 		return res.toString();
 	}
@@ -397,7 +400,7 @@ public class Board {
 		*/
 		@Override
 		public String toString(){
-			return "|"+(((occupator!=null)?occupator.getSymbol():(color.equals(Game.Color.BLACK))?"\u00b7":" "))+"|";
+			return " "+(((occupator!=null)?occupator.getSymbol():(color.equals(Game.Color.BLACK))?"\u00B7":" "))+" ";
 		}
 	}
 }

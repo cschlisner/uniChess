@@ -7,15 +7,16 @@ class ConsoleChess {
 	public static void main(String[] args) {
 		Scanner in = new Scanner(System.in);
 
-		Player<String> p1 = new Player<>("player one", Game.Color.WHITE);
-		Player<String> p2 = new Player<>("player two", Game.Color.BLACK);
+		Player<String> p1 = new Player<>("Human", Game.Color.WHITE);
+		Chesster<String> p2 = new Chesster<>("Chesster", Game.Color.BLACK);
+
 
 		Game chessGame = new Game(p1, p2);
 		System.out.print(chessGame.getCurrentBoard());
 		
 		while (true){
 
-				Game.GameEvent gameResponse = chessGame.advance(in.nextLine());
+				Game.GameEvent gameResponse = chessGame.advance((chessGame.getCurrentPlayer().equals(p1) ? in.nextLine() : p2.getMove()));
 
 				System.out.print(chessGame.getCurrentBoard());
 				
@@ -37,6 +38,7 @@ class ConsoleChess {
 						break;
 					case CHECKMATE:
 						System.out.println("Checkmate. "+chessGame.getDormantPlayer().getID()+" wins!");
+						System.out.println(chessGame.getGameString());
 						System.exit(0);
 						break;
 					case STALEMATE:
