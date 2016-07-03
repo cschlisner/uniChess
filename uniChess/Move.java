@@ -143,3 +143,31 @@ public class Move {
 	}
 
 }
+
+class SmartMove extends Move implements Comparable<SmartMove>{
+
+        public double strategicValue;
+        public double tacticalValue;
+
+        public int materialValue;
+
+        public Game.PieceType movingPieceType;
+
+        public SmartMove(Move move){
+            super(move.origin, move.destination, move.board);
+
+            this.materialValue = getMaterialValue();
+
+            this.movingPieceType = this.board.getTile(origin).getOccupator().type;
+        }
+
+        private int getMaterialValue(){
+            return (this.board.getTile(destination).getOccupator() != null ? this.board.getTile(destination).getOccupator().value : 0);
+        }
+
+        @Override 
+        public int compareTo(SmartMove other){
+            if (this.CHECKMATE) return 1;
+            return (this.strategicValue > other.strategicValue) ? 1 : (this.strategicValue < other.strategicValue) ? -1 : 0;
+        }
+}

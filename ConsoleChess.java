@@ -10,7 +10,6 @@ class ConsoleChess {
 		Player<String> p1 = new Player<>("Human", Game.Color.WHITE);
 		Chesster<String> p2 = new Chesster<>("Chesster", Game.Color.BLACK);
 
-
 		Game chessGame = new Game(p1, p2);
 		System.out.print(chessGame.getCurrentBoard());
 		
@@ -51,7 +50,6 @@ class ConsoleChess {
 				}
 
 		}
-
 	}
 
 }

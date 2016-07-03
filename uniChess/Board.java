@@ -4,10 +4,20 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
-*	An object holding a boardstate. Each Board holds an array of 64 Tiles, any of which can be occupied by a Piece.  
+*	An object holding a boardstate. Each Board holds an array of 64 Tiles, any of which can be occupied by a Piece.
+*	A board state will never actually change. When performMove() is called a new board is generated with the new boardstate.
+*	This means that all information about this board (including legal moves, piece locations, etc) is in an artificial static state.
+*	<p> 
+*	Since all information about the board will never change, two lists of legal moves for each player is generated on creation. 
+*	These lists will be publicly acessable and unchanging so that no additional calculation will need to be done for the board. 
 */
 public class Board {
 	private Tile[][] state = new Tile[8][8];
+
+	private List<Move> legalWhiteMoves;
+	
+	private List<Move> legalBlackMoves;
+
 
 	/** Sets the orientation of the string representation of the board. */
 	public static boolean reversed;
@@ -222,7 +232,7 @@ public class Board {
 		
 		switch (movingPiece.type){
 			case PAWN:
-				Piece enpasse = (dy + dx == 0 || dy + dx == 2) ? getTile(move.origin.x+dx, move.origin.y).getOccupator() : null;
+				Piece enpasse = (dy == 1 && (dy + dx == 0 || dy + dx == 2)) ? getTile(move.origin.x+dx, move.origin.y).getOccupator() : null;
 				move.PROMOTION = (move.destination.y == (movingPiece.color.equals(Game.Color.WHITE) ? 7 : 0));
 				if ((dy == 1 && dx == 0 && !enemy)
 					|| (movingPiece.moves.size()==0 && dy == 2 && dx == 0 && cardinalLineOfSightClear(move.origin, move.destination) && !enemy) 
@@ -296,6 +306,85 @@ public class Board {
 
 		return moves;
 	}
+
+	/**
+	*	Determines whether a given player on a given board holds check.
+	*	
+	*	@param board The board to check on 
+	*	@param c The color of player to check for
+	*	@return Whether the player has check 	
+	*/
+	public static boolean playerHasCheck(Board board, Game.Color c){
+		Piece p;
+		for (Move m : board.getValidMoves(c)){
+			p = board.getTile(m.destination).getOccupator();
+			if (p != null && p.ofType(Game.PieceType.KING))
+				return true;
+		}
+		return false;
+	}
+
+	public static boolean playerHasCheck(Board board, Player player){
+		return Board.playerHasCheck(board, player.color);
+	}
+
+	/**
+	*	Gets a list of all valid moves for all pieces of a given color
+	* 
+	*	@param c The color to gather moves for
+	*	@return The list of moves
+	*/
+	public List<Move> calculateLegalMoves(Game.Color c){
+		List<Move> validMoves = getValidMoves(c);
+		List<Move> legalMoves = new ArrayList<>();
+
+		for (Move m : validMoves)
+			if (!Board.playerHasCheck(performMove(m), Game.getOpposite(c)))
+				legalMoves.add(m);
+
+		return legalMoves;
+	}
+
+	/**
+	*	Returns the list of legal moves for a given color if this method has been called before. 
+	*	Otherwise, it will generate the list and return it. 
+	* 
+	*	@param color The color to gather moves for
+	*	@return The list of moves
+	*/
+	public List<Move> getLegalMoves(Game.Color color){
+
+		List<Move> legal =  ((color.equals(Game.Color.BLACK) ? legalBlackMoves : legalWhiteMoves));
+
+		if (legal != null)
+			return legal;
+		
+		else legal = calculateLegalMoves(color);
+
+		return legal;
+	}
+
+	/**
+	*	Returns the list of legal moves for a given player
+	* 
+	*	@param player The Opponent of the Player to gather moves for
+	*	@return The list of moves
+	*/
+	public List<Move> getLegalMoves(Player player){
+		return getLegalMoves(player.color);
+	}
+
+	/**
+	*	Returns the list of legal moves for a given player's opponent
+	* 
+	*	@param player The Opponent of the Player to gather moves for
+	*	@return The list of moves
+	*/
+	public List<Move> getOpponentLegalMoves(Player player){
+		return getLegalMoves(Game.getOpposite(player.color));
+	}
+
+
 
 	/**
 	*	Performs a given move, as well as any additional actions associated with a

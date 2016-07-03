@@ -121,8 +121,24 @@ public class Game {
 		return whiteMove ? black : white;
 	}
 
-	public Player getOpponent(Player player){
-		return (getCurrentPlayer().equals(player) ? getDormantPlayer() : getCurrentPlayer());
+	/**
+	*	Returns the Player controlling a given color. 
+	*	
+	*	@param color The color to get the player for
+	*	@return The player controlling the given color.
+	*/
+	public Player getPlayer(Color color){
+		return color.equals(Color.BLACK) ? black : white;
+	}
+
+	/**
+	*	Returns the opposite of a given color.
+	*
+	*	@param c The opposite of the desired color
+	*	@return The opposite of the supplied color
+	*/
+	public static Color getOpposite(Color c){
+		return (c.equals(Color.BLACK) ? Color.WHITE : Color.BLACK);
 	}
 
 	/**
@@ -154,7 +170,7 @@ public class Game {
 
 			Move move = Move.parseMove(getCurrentBoard(), getCurrentPlayer().color, in);
 			
-			List<Move> legal = getLegalMoves(getCurrentBoard(), getCurrentPlayer());
+			List<Move> legal = getCurrentBoard().getLegalMoves(getCurrentPlayer());
 			
 			if (!legal.contains(move))
 				return GameEvent.ILLEGAL;
@@ -166,13 +182,13 @@ public class Game {
 
 			gameString += move.getANString()+",";
 
-			if (playerHasCheck(getCurrentBoard(), getDormantPlayer()) && getLegalMoves(getCurrentBoard(), getCurrentPlayer()).isEmpty())
+			if (Board.playerHasCheck(getCurrentBoard(), getDormantPlayer()) && getCurrentBoard().getLegalMoves(getCurrentPlayer()).isEmpty())
 				return GameEvent.CHECKMATE;
 
-			else if (getLegalMoves(getCurrentBoard(), getCurrentPlayer()).isEmpty())
-				return GameEvent.STALEMATE;
+			else if (getCurrentBoard().getLegalMoves(getCurrentPlayer()).isEmpty()) // This is a stalemate, which results in Draw
+				return GameEvent.DRAW;
 
-			else if (playerHasCheck(getCurrentBoard(), getDormantPlayer()))
+			else if (Board.playerHasCheck(getCurrentBoard(), getDormantPlayer()))
 				return GameEvent.CHECK;
 
 
@@ -190,40 +206,5 @@ public class Game {
 		}
 		
 		return GameEvent.OK;	
-	}
-
-	/**
-	*	Determines whether a given player on a given board holds check.
-	*	
-	*	@param board The board to check on 
-	*	@param player The player to check for
-	*	@return Whether the player has check 	
-	*/
-	public boolean playerHasCheck(Board board, Player player){
-		Piece p;
-		for (Move m : board.getValidMoves(player.color)){
-			p = board.getTile(m.destination).getOccupator();
-			if (p != null && p.ofType(PieceType.KING))
-				return true;
-		}
-		return false;
-	}
-
-	/**
-	*	Returns a list of moves that are legal on a given board for a given player.
-	*
-	*	@param board The board to check on
-	*	@param player The player to check for
-	*	@return The list of legal moves
-	*/
-	public List<Move> getLegalMoves(Board board, Player player){
-		List<Move> validMoves = board.getValidMoves(player.color);
-		List<Move> legalMoves = new ArrayList<>();
-
-		for (Move m : validMoves)
-			if (!playerHasCheck(board.performMove(m), getOpponent(player)))
-				legalMoves.add(m);
-
-		return legalMoves;
 	}
 }
