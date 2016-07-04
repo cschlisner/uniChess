@@ -211,6 +211,37 @@ public class Board {
 		return true;
 	}
 
+
+	/**
+	*	Returns the distance from a given location to the king of the given color
+	*
+	*	@param color The color of the king to get the distance for
+	*	@param locale The location to calculate the distance for
+	*	@return The distance from the given location to the king of the given color
+	*/
+	public double getDistanceFromKing(Game.Color color, Location locale){
+		Location kingLoc = null;
+		for (Tile t : getTileList()){
+			if (t.getOccupator()!=null && t.getOccupator().type.equals(Game.PieceType.KING) && t.getOccupator().color.equals(color)){
+				kingLoc = t.getLocale();
+				break;
+			}
+		}
+
+		return getDistanceFromLocation(locale, kingLoc);
+	}	
+
+	/**
+	*	Returns the net distance from one location to anoter location on the board
+	*	
+	*	@param a The original location
+	*	@param b The destination
+	*	@return The net distance between the two locations
+	*/
+	public double getDistanceFromLocation(Location a, Location b){
+		return Math.sqrt(Math.pow((double)Math.abs(a.x-b.x), 2) + Math.pow((double)Math.abs(a.y-b.y), 2));
+	}
+
 	/**
 	*	Determines whether a given move is valid according to the move's origin piece's defined move set.
 	* 
@@ -382,6 +413,20 @@ public class Board {
 	*/
 	public List<Move> getOpponentLegalMoves(Player player){
 		return getLegalMoves(Game.getOpposite(player.color));
+	}
+
+	/**
+	*	Determines whether the king of a given color can move to a given location
+	*	
+	*	@param locale The location being calculated for
+	*	@param color The color of the king being calculated for
+	*	@return whether the king can move to the location
+	*/
+	public boolean isValidMoveForKing(Game.Color color, Location locale){
+		for (Move m : getLegalMoves(color))
+			if (m.destination.equals(locale) && getTile(m.origin).getOccupator().type.equals(Game.PieceType.KING))
+				return true;
+		return false;
 	}
 
 

@@ -14,8 +14,14 @@ import java.lang.Thread;
 public class Chesster <T> extends Player <T>{
     private Game game;
 
+    private int threadProcessingCount = -1;
+
     public Chesster(T id, Game.Color c){
         super(id, c);
+    }
+
+    public void setThreadProcessingCount(int c){
+        this.threadProcessingCount = c;
     }
 
     public void registerGame(Game g){
@@ -29,6 +35,7 @@ public class Chesster <T> extends Player <T>{
     long sysTime;
     double processTimeSum = 0.0;
     double processes = 0.0;
+
     /**
     *   Returns the best possible legal move for the bot based on individual 
     *   tactics and strategy (logarithmic sum of average tactical value of future moves).
@@ -53,27 +60,20 @@ public class Chesster <T> extends Player <T>{
 
         List<StrategyProcessorThread> threadPool = new ArrayList<>();
 
-        for (SmartMove sm : smartMoves){
-            threadPool.add(new StrategyProcessorThread(sm, this, (smartMoves.size() <= 25 ? 0 : 1)));
-            threadPool.get(threadPool.size()-1).start();
-        }
+        for (SmartMove sm : smartMoves)
+            threadPool.add(new StrategyProcessorThread(sm, this));
         
-        // for (Thread t : threadPool){
-        //     try {
-        //         t.join();
-        //     } catch (Exception e) {
-        //         e.printStackTrace();
-        //     }
-        // }
+        threadProcessingCount = (threadProcessingCount < 0 ? smartMoves.size() : threadProcessingCount);
 
-        int threadsComplete = 0;
-        while (!threadPool.isEmpty()){
-            for (int i = 0; i < threadPool.size(); ++i){
-                if (threadPool.get(i).getState().equals(Thread.State.TERMINATED)){
-                    ++threadsComplete;
-                    printProgress(threadsComplete, smartMoves.size());
-                    threadPool.remove(i);
-                }
+        processLoop:
+        for (int i = 0; i < smartMoves.size(); i += threadProcessingCount){
+            for (int j = i; j < i + threadProcessingCount; ++j){
+                if (j == threadPool.size()) break processLoop;
+                threadPool.get(j).start();
+                printProgress(j, smartMoves.size(), threadPool.get(j).sm.toString());
+                try{
+                    threadPool.get(j).join();
+                } catch (Exception e) {}
             }
         }
 
@@ -95,10 +95,10 @@ public class Chesster <T> extends Player <T>{
                 }
             }
 
-            for (int i = cutoff; i < smartMoves.size(); ++i)
-                System.out.print(smartMoves.get(i)+": "+smartMoves.get(i).strategicValue+" | ");
+            // for (int i = cutoff; i < smartMoves.size(); ++i)
+            //     System.out.print(smartMoves.get(i)+": "+smartMoves.get(i).strategicValue+" | ");
 
-            Random r = new Random();
+            Random r = new Random(System.currentTimeMillis());
             best = smartMoves.get(cutoff+r.nextInt(smartMoves.size()-cutoff));
         }
 
@@ -110,7 +110,7 @@ public class Chesster <T> extends Player <T>{
     }
 
 
-    public void printProgress(int prog, int total){
+    public void printProgress(int prog, int total, String sm){
         double percent = (double)prog/total;
         double percentFrom20 = 20 * percent;
         System.out.print("\rThinking [");
@@ -119,6 +119,6 @@ public class Chesster <T> extends Player <T>{
                 System.out.print("=");
             else System.out.print(" ");
         }
-        System.out.print("]");
+        System.out.print("] "+sm);
     }
 }

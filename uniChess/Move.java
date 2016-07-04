@@ -18,10 +18,13 @@ public class Move {
 	
 	public Board board;
 
+	public Piece movingPiece;
+
 	public Move(Location a, Location b, Board bo){
 		origin = a;
 		destination = b;
 		board = bo;
+		movingPiece = bo.getTile(origin).getOccupator();
 	}
 
 	@Override
@@ -165,9 +168,25 @@ class SmartMove extends Move implements Comparable<SmartMove>{
             return (this.board.getTile(destination).getOccupator() != null ? this.board.getTile(destination).getOccupator().value : 0);
         }
 
+        // for every piece except the king, being closer to the opposite king is more advantageous
+        public double getLocationValue(){
+        	if (!this.movingPiece.type.equals(Game.PieceType.KING))
+        		return this.board.getDistanceFromKing(Game.getOpposite(this.movingPiece.color), this.destination);
+        	else return this.board.getDistanceFromLocation(this.destination, (this.movingPiece.color.equals(Game.Color.WHITE) ? new Location(4,0) : new Location(4,7)));
+        }
+
+
+        /**
+        *	Compares Moves based on strategic value, then on location value if strategic value is equivalent.
+        *
+        */
         @Override 
         public int compareTo(SmartMove other){
             if (this.CHECKMATE) return 1;
-            return (this.strategicValue > other.strategicValue) ? 1 : (this.strategicValue < other.strategicValue) ? -1 : 0;
+           
+            return (this.strategicValue > other.strategicValue) ? 
+            			1 : (this.strategicValue < other.strategicValue) ? 
+            				-1 : (this.getLocationValue() > other.getLocationValue()) ? 
+            					1 : (this.getLocationValue() < other.getLocationValue()) ? -1 : 0;
         }
 }

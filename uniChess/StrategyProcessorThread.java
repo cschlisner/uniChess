@@ -10,20 +10,19 @@ public class StrategyProcessorThread extends Thread {
     
     Game game;
     Chesster chesster;
-    int cpuSave;
+    int cpuSave=0;
 
-    SmartMove sm;
+    public SmartMove sm;
 
 
     private int AI_DEPTH = 1;
     private int AI_COMPLEXITY = 4;
     private int OPPONENT_COMPLEXITY = 1;
     
-    public StrategyProcessorThread(SmartMove sm, Chesster chesster, int cpuSave){
+    public StrategyProcessorThread(SmartMove sm, Chesster chesster){
         super(sm.getANString());
         this.sm = sm;
         this.chesster = chesster;
-        this.cpuSave = cpuSave;
         this.game = chesster.getGame();
     }
 
@@ -44,38 +43,9 @@ public class StrategyProcessorThread extends Thread {
     public void run(){
         // System.out.println("start "+this.getName());
 
-        switch(sm.movingPieceType){ 
-            case PAWN:
-                AI_DEPTH = 5-cpuSave;
-                AI_COMPLEXITY = 4-cpuSave; 
-                OPPONENT_COMPLEXITY = 4-cpuSave; 
-                break;
-            case ROOK:
-                AI_DEPTH = 2; 
-                AI_COMPLEXITY = 3-cpuSave;
-                OPPONENT_COMPLEXITY = 1; 
-                break;
-            case KNIGHT:
-                AI_DEPTH = 3-cpuSave;
-                AI_COMPLEXITY = 3-cpuSave; 
-                OPPONENT_COMPLEXITY = 2; 
-                break;
-            case BISHOP:
-                AI_DEPTH = 2;
-                AI_COMPLEXITY = 4-cpuSave; 
-                OPPONENT_COMPLEXITY = 1;
-                break;
-            case QUEEN:
-                AI_DEPTH = 2-cpuSave; 
-                AI_COMPLEXITY = 4-cpuSave;
-                OPPONENT_COMPLEXITY = 4-cpuSave;
-                break;
-            case KING:
-                AI_DEPTH = 3-cpuSave; 
-                AI_COMPLEXITY = 4;
-                OPPONENT_COMPLEXITY = 4-cpuSave; 
-                break;
-        }
+        AI_DEPTH = 1; 
+        AI_COMPLEXITY = 4;
+        OPPONENT_COMPLEXITY = 4; 
 
         processTacticalValue(sm, chesster, AI_COMPLEXITY);
 
@@ -208,7 +178,7 @@ public class StrategyProcessorThread extends Thread {
 
         List<Move> res = new ArrayList<>();
         for (Move legal : sim2.getLegalMoves(chesster))
-            if (legal.origin.equals(m.destination))
+           // if (legal.origin.equals(m.destination))
                 res.add(legal);
 
         return res;
@@ -249,8 +219,8 @@ public class StrategyProcessorThread extends Thread {
     *                                                             captured is of more value than the recapture, the tactic value is 0.
     *
     *   The above variables ordered in terms of importance is the following: 
-    *   1. discover
-    *   2. potential material
+    *   1. potential material
+    *   2. discover
     *   3. skewer
     *   4. capturable / recapturable
     *   
@@ -278,21 +248,21 @@ public class StrategyProcessorThread extends Thread {
             capturable = calculateCapturable(sim, sm, p);
 
         if (complexity < 4 ^ capturable <= 0){
-            if (complexity >= 2)
-                potentialMaterial = calculatePotentialMaterial(sim, sm, p);
-
             if (complexity >= 3)
                 skewer = calculateSkewer(sim, sm, p);
             
-            if (complexity >= 1)
+            if (complexity >= 2)
                 discover = calculateDiscover(sim, sm, p);
+            
+            if (complexity >= 1)
+                potentialMaterial = calculatePotentialMaterial(sim, sm, p);
         }
 
         //System.out.format("%s = p: %s | s: %s | d: %s | c: %s\n", sm, potentialMaterial, skewer, discover, capturable);
 
-        int offensiveValue = (potentialMaterial + skewer + discover);
+        int offensiveValue = (potentialMaterial + skewer + discover + sm.materialValue);
         
-        int defensiveWeighted = (capturable > 0 ? 0 : (capturable < 0 ? (-1*capturable) : offensiveValue));
+        int defensiveWeighted = (capturable > 0 ? (-1*sm.movingPiece.value) : (capturable < 0 ? (-1*capturable) : offensiveValue));
         
         sm.tacticalValue = ((complexity >= 4) ? defensiveWeighted : offensiveValue);
     }
@@ -306,7 +276,7 @@ public class StrategyProcessorThread extends Thread {
         
         for (Move lsem : legalSimEnemy){
             if (lsem.destination.equals(sm.destination)){
-                capturable = sm.board.getTile(sm.origin).getOccupator().value;
+                capturable = sm.movingPiece.value;
                 break;
             }
         }
@@ -321,8 +291,8 @@ public class StrategyProcessorThread extends Thread {
                     List<Move> legalMovesAfterPieceCaptured = pieceCapturedBoard.getLegalMoves(p);
                     for (Move m : legalMovesAfterPieceCaptured){
                         if (m.destination.equals(sm.destination)){
-                            int enemyVal = sim.getTile(lsem.origin).getOccupator().value;
-                            int pieceVal = sm.board.getTile(sm.origin).getOccupator().value;
+                            int enemyVal = lsem.movingPiece.value;
+                            int pieceVal = sm.movingPiece.value;
                             capturable = ( enemyVal > pieceVal ) ? -1*(enemyVal-pieceVal) : capturable;
                         }
                     }
@@ -345,7 +315,9 @@ public class StrategyProcessorThread extends Thread {
                 if (simSmart.materialValue > 0){
                     potentialMaterial += simSmart.materialValue;
                     if (sim.getTile(simSmart.destination).getOccupator().ofType(Game.PieceType.KING))
-                        potentialMaterial += 100; // check move
+                        potentialMaterial += 200; // check move
+                    else if (sim.isValidMoveForKing(Game.getOpposite(p.color), simSmart.destination))
+                        potentialMaterial += 100; // will block a king move, hopefully resulting in checkmate
                 }
                 
             }
