@@ -42,7 +42,7 @@ public class Chesster <T> extends Player <T>{
     *
     *   @return the best move
     */
-    public String getMove(){
+    public Move getMove(){
 
         Move best;
 
@@ -81,10 +81,16 @@ public class Chesster <T> extends Player <T>{
 
         double processTime = (double)((System.currentTimeMillis() - sysTime)/1000);
         
+        long avgThreadTime = 0;
+        for (StrategyProcessorThread t : threadPool)
+            avgThreadTime += t.runTime;
+        avgThreadTime /= threadPool.size();
+
+
         processTimeSum += Math.round(processTime * 100.0) / 100.0;
         ++processes;
         double avgProcTime = Math.round((processTimeSum / processes) * 100.0) / 100.0; 
-        System.out.format("\n# Time : %ss | avg: %ss\n", processTime, avgProcTime);
+        System.out.format("\n# Time : %ss | avg: %ss | avg thread: %sms\n", processTime, avgProcTime, avgThreadTime);
 
         if (smartMoves.get(smartMoves.size()-1).strategicValue > 0){
             int cutoff=0;
@@ -106,7 +112,7 @@ public class Chesster <T> extends Player <T>{
 
         System.out.println("\n"+best);
 
-        return best.getANString();
+        return best;
     }
 
 

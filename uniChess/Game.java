@@ -181,7 +181,6 @@ public class Game {
 			boards.add(getCurrentBoard().performMove(move));
 
 			whiteMove = !whiteMove;
-			Board.reversed = !whiteMove;
 
 			gameString += move.getANString()+",";
 

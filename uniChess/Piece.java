@@ -63,7 +63,7 @@ public class Piece {
 				
 				break;
 			case BISHOP:
-				this.value = 6;
+				this.value = 8;
 				this.symbol = "B";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[3]));
 				break;

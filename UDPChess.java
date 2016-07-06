@@ -10,14 +10,19 @@ import java.io.*;
 class UDPChess {
 
 	static int server_port = 9876;
-	static InetAddress clientIP = null;
+	static InetAddress clientIP;
 
 
 	public static void main(String[] args) {
+
+		try {
+			clientIP = InetAddress.getByName("10.208.114.93");
+		} catch(Exception e){};
+
 		Scanner in = new Scanner(System.in);
 
-		Player<String> p1 = new Player<>("Human", Game.Color.WHITE);
-		Chesster<String> p2 = new Chesster<>("Chesster", Game.Color.BLACK);
+		Chesster<String> p1 = new Chesster<>("Chesster", Game.Color.BLACK);
+		Player<String> p2 = new Player<>("Jake", Game.Color.WHITE);
 
 
 		Game chessGame = new Game(p1, p2);
@@ -45,6 +50,7 @@ class UDPChess {
 							serverSocket.receive(receivePacket);
 							
 							netMove = new String(receivePacket.getData(), 0, receivePacket.getLength());
+							netMove.replace("x", "");
 							clientIP = receivePacket.getAddress();
 						} catch(Exception e){
 							System.out.println(e.getMessage());
@@ -54,9 +60,10 @@ class UDPChess {
 					gameResponse = chessGame.advance(netMove);
 				}
 				else {
-					String input = in.nextLine();
-					gameResponse = chessGame.advance(input);
-					send(input);
+					Move input = p1.getMove();
+					System.out.println("Sending move to "+clientIP+"...");
+					gameResponse = chessGame.advance(input.getANString());
+					send(input.movingPiece.getSymbol(false).toUpperCase()+input.destination.toString());
 				}
 				System.out.print(chessGame.getCurrentBoard());
 				

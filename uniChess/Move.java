@@ -187,6 +187,6 @@ class SmartMove extends Move implements Comparable<SmartMove>{
             return (this.strategicValue > other.strategicValue) ? 
             			1 : (this.strategicValue < other.strategicValue) ? 
             				-1 : (this.getLocationValue() > other.getLocationValue()) ? 
-            					1 : (this.getLocationValue() < other.getLocationValue()) ? -1 : 0;
+            					-1 : (this.getLocationValue() < other.getLocationValue()) ? 1 : 0;
         }
 }

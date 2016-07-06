@@ -7,7 +7,7 @@ class ConsoleChess {
 	public static void main(String[] args) {
 		Scanner in = new Scanner(System.in);
 
-		Player<String> p1 = new Player<>("Human", Game.Color.WHITE);
+		Chesster<String> p1 = new Chesster<>("Human", Game.Color.WHITE);
 		Chesster<String> p2 = new Chesster<>("Chesster", Game.Color.BLACK);
 
 		Game chessGame = new Game(p1, p2);
@@ -15,7 +15,7 @@ class ConsoleChess {
 		
 		while (true){
 
-				Game.GameEvent gameResponse = chessGame.advance((chessGame.getCurrentPlayer().equals(p1) ? in.nextLine() : p2.getMove()));
+				Game.GameEvent gameResponse = chessGame.advance((chessGame.getCurrentPlayer().equals(p1) ? p1.getMove().getANString() : p2.getMove().getANString()));
 
 				System.out.print(chessGame.getCurrentBoard());
 				

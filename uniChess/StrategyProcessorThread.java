@@ -11,13 +11,15 @@ public class StrategyProcessorThread extends Thread {
     Game game;
     Chesster chesster;
     int cpuSave=0;
+    long sysTime=0;
+    public long runTime;
 
     public SmartMove sm;
 
 
     private int AI_DEPTH = 1;
     private int AI_COMPLEXITY = 4;
-    private int OPPONENT_COMPLEXITY = 1;
+    private int OPPONENT_COMPLEXITY = 4;
     
     public StrategyProcessorThread(SmartMove sm, Chesster chesster){
         super(sm.getANString());
@@ -42,10 +44,41 @@ public class StrategyProcessorThread extends Thread {
     */
     public void run(){
         // System.out.println("start "+this.getName());
+        sysTime = System.currentTimeMillis();
+        
 
-        AI_DEPTH = 1; 
-        AI_COMPLEXITY = 4;
-        OPPONENT_COMPLEXITY = 4; 
+        // switch(sm.movingPiece.type){
+        //     case PAWN:
+        //         AI_DEPTH = 1; 
+        //         AI_COMPLEXITY = 4;
+        //         OPPONENT_COMPLEXITY = 3; 
+        //         break;
+        //     case ROOK:
+        //         AI_DEPTH = 1; 
+        //         AI_COMPLEXITY = 4;
+        //         OPPONENT_COMPLEXITY = 2; 
+        //         break;
+        //     case KNIGHT:
+        //         AI_DEPTH = 2; 
+        //         AI_COMPLEXITY = 1;
+        //         OPPONENT_COMPLEXITY = 1; 
+        //         break;
+        //     case BISHOP:
+        //         AI_DEPTH = 1; 
+        //         AI_COMPLEXITY = 4;
+        //         OPPONENT_COMPLEXITY = 4; 
+        //         break;
+        //     case QUEEN:
+        //         AI_DEPTH = 1; 
+        //         AI_COMPLEXITY = 4;
+        //         OPPONENT_COMPLEXITY = 4; 
+        //         break;
+        //     case KING:  
+        //         AI_DEPTH = 1; 
+        //         AI_COMPLEXITY = 4;
+        //         OPPONENT_COMPLEXITY = 4; 
+        //         break;
+        // }
 
         processTacticalValue(sm, chesster, AI_COMPLEXITY);
 
@@ -93,7 +126,7 @@ public class StrategyProcessorThread extends Thread {
 
         // set the strategic value to the sum of average weighted tacticals of each tree depth
         sm.strategicValue = sum;
-        // System.out.println("end "+this.getName());
+        runTime = System.currentTimeMillis() - sysTime;
     }
 
     public void printMoveTree(List<List<Move>> tree){
@@ -247,9 +280,9 @@ public class StrategyProcessorThread extends Thread {
         if (complexity >= 4)
             capturable = calculateCapturable(sim, sm, p);
 
-        if (complexity < 4 ^ capturable <= 0){
-            if (complexity >= 3)
-                skewer = calculateSkewer(sim, sm, p);
+        if ((complexity < 4 ^ capturable == 0) && sm.materialValue == 0){
+            // if (complexity >= 3)
+            //     skewer = calculateSkewer(sim, sm, p);
             
             if (complexity >= 2)
                 discover = calculateDiscover(sim, sm, p);
@@ -316,9 +349,9 @@ public class StrategyProcessorThread extends Thread {
                     potentialMaterial += simSmart.materialValue;
                     if (sim.getTile(simSmart.destination).getOccupator().ofType(Game.PieceType.KING))
                         potentialMaterial += 200; // check move
-                    else if (sim.isValidMoveForKing(Game.getOpposite(p.color), simSmart.destination))
-                        potentialMaterial += 100; // will block a king move, hopefully resulting in checkmate
                 }
+                else if (sim.isValidMoveForKing(Game.getOpposite(p.color), simSmart.destination))
+                    potentialMaterial += 100; // will block a king move, hopefully resulting in checkmate
                 
             }
         }
