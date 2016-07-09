@@ -10,10 +10,18 @@ import java.io.*;
 class UDPChess {
 
 	static int server_port = 9876;
+	static int send_port = 9876;
 	static InetAddress clientIP;
 
 
 	public static void main(String[] args) {
+		
+		if (args.length >= 1 && args[0] != null)
+			server_port = Integer.valueOf(args[0]);
+		if (args.length >= 2 && args[1] != null)
+			send_port = Integer.valueOf(args[1]);
+
+		System.out.format("Receiving on: %s\nSending to: %s\n", server_port, send_port);
 
 		try {
 			clientIP = InetAddress.getByName("10.208.114.93");
@@ -21,13 +29,14 @@ class UDPChess {
 
 		Scanner in = new Scanner(System.in);
 
-		Chesster<String> p1 = new Chesster<>("Chesster", Game.Color.BLACK);
-		Player<String> p2 = new Player<>("Jake", Game.Color.WHITE);
+		Player<String> p1 = new Player<>("Jake", Game.Color.WHITE);
+		Chesster<String> p2 = new Chesster<>("Chesster", Game.Color.BLACK);
 
 
 		Game chessGame = new Game(p1, p2);
-		System.out.print(chessGame.getCurrentBoard());
 		
+		chessGame.getCurrentBoard().print(p1,p2);
+
 		DatagramSocket serverSocket = null;
 		try {
 			serverSocket = new DatagramSocket(server_port);
@@ -41,7 +50,7 @@ class UDPChess {
 		while (true){
 				Game.GameEvent gameResponse;
 				
-				if (chessGame.getCurrentPlayer().equals(p2)){
+				if (chessGame.getCurrentPlayer().equals(p1)){
 					String netMove = null;
 					System.out.println("Waiting for move from network...");
 					while (netMove == null || netMove.isEmpty()){
@@ -60,12 +69,14 @@ class UDPChess {
 					gameResponse = chessGame.advance(netMove);
 				}
 				else {
-					Move input = p1.getMove();
+					Move input = p2.getMove();
 					System.out.println("Sending move to "+clientIP+"...");
 					gameResponse = chessGame.advance(input.getANString());
-					send(input.movingPiece.getSymbol(false).toUpperCase()+input.destination.toString());
+					String sym = input.movingPiece.getSymbol(false).toUpperCase();
+					send((sym.equals("P") ? "" : sym)+input.destination.toString());
 				}
-				System.out.print(chessGame.getCurrentBoard());
+				
+				chessGame.getCurrentBoard().print(p1,p2);
 				
 				switch(gameResponse){
 
@@ -101,9 +112,9 @@ class UDPChess {
 
 	private static void send(String msg){
 		try {
-        DatagramSocket s = new DatagramSocket();
-        s.send(new DatagramPacket(msg.getBytes(), msg.length(), clientIP, server_port));
-        s.close();
+        DatagramSocket soc = new DatagramSocket();
+        soc.send(new DatagramPacket(msg.getBytes(), msg.length(), clientIP, send_port));
+        soc.close();
     } catch (Exception e) {
         e.printStackTrace();
     }

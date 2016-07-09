@@ -66,6 +66,7 @@ public class Game {
 			((Chesster)black).registerGame(this);
 
 		boards.add(new Board());
+		getCurrentBoard().processLegal();
 	}
 
 	/**
@@ -76,6 +77,7 @@ public class Game {
 	*	@return The game string
 	*/
 	public String getGameString(){
+		if (gameString.isEmpty()) return "";
 		return gameString.substring(0, gameString.length()-1);
 	}
 
@@ -178,7 +180,8 @@ public class Game {
 			if (!legal.contains(move))
 				return GameEvent.ILLEGAL;
 
-			boards.add(getCurrentBoard().performMove(move));
+			boards.add(move.getSimulation());
+			getCurrentBoard().processLegal();
 
 			whiteMove = !whiteMove;
 

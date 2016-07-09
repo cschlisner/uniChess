@@ -23,10 +23,13 @@ public class Piece {
 	public Game.PieceType type;
 	
 	/** The material value of this piece.*/
-	public int value;
+	public double value;
 
 	/**	The list of locations that this piece has moved to*/
 	public List<Location> moves;
+
+	/** Indicates whether this piece is uner attack*/
+	public Move attackingMove = null;
 
 	public Piece(Piece other){
 		this(other.color, other.type);
@@ -46,35 +49,35 @@ public class Piece {
 
 		switch(type){
 			case PAWN:
-				this.value = 2;
+				this.value = 2.0;
 				this.symbol = "P";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[0])); 
 				break;
 			case ROOK:
-				this.value = 10;
+				this.value = 6.0;
 				this.symbol = "R";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[1]));
 				
 				break;
 			case KNIGHT:
-				this.value = 6;
+				this.value = 4.0;
 				this.symbol = "N";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[2]));
 				
 				break;
 			case BISHOP:
-				this.value = 8;
+				this.value = 4.0;
 				this.symbol = "B";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[3]));
 				break;
 			case QUEEN:
-				this.value = 18;
+				this.value = 10.0;
 				this.symbol = "Q";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[4]));
 				
 				break;
 			case KING:	
-				this.value = 20;
+				this.value = 200.0;
 				this.symbol = "K";
 				this.unicodeSymbol = new String(Character.toChars(unicodeChars[5]));
 				

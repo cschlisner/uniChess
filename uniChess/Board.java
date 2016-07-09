@@ -15,8 +15,12 @@ public class Board {
 	private Tile[][] state = new Tile[8][8];
 
 	private List<Move> legalWhiteMoves;
-	
 	private List<Move> legalBlackMoves;
+
+	private List<Move> validWhiteMoves;
+	private List<Move> validBlackMoves;
+
+	private List<Piece> deathRow = new ArrayList<>();
 
 
 	/** Sets the orientation of the string representation of the board. */
@@ -26,6 +30,7 @@ public class Board {
 		for (int y = 0; y < 8; ++y)
 			for (int x = 0; x < 8; ++x)
 				state[y][x] = new Tile(other.getTile(x, 7-y));
+		this.deathRow.addAll(other.deathRow);
 	}
 
 	public Board(){
@@ -104,6 +109,15 @@ public class Board {
 
 	private String COLDIM = "\033[2m", INVCOL="\033[7m", TERMCOL = "\033[0m";
 
+	private String displayDeathRow(Game.Color color){
+		StringBuilder res = new StringBuilder();
+		res.append("   ");
+		for (Piece p : deathRow)
+			if (p.color.equals(color))
+				res.append(p + " ");
+		return res.toString();
+	}
+
 	private String writeColumnLabels(int max, boolean reversed){
 		StringBuilder res = new StringBuilder();
 		res.append(" ");
@@ -123,13 +137,20 @@ public class Board {
 		 max = (String.valueOf(el).length() > max)?String.valueOf(el).length():max;
 		return max;
     }
-
 	private String getBoardString(){
+		return getBoardString("","");
+	}
+	private String getBoardString(Player whiten, Player blackn){
+		return getBoardString(whiten.toString(), blackn.toString());
+	}
+	private String getBoardString(String whiten, String blackn){
 		StringBuilder res = new StringBuilder();
 		
 		int max = findMaxLen(getBoardState());
 		int y = 8;
-		res.append("\n"+writeColumnLabels(max, reversed)+"\n");
+		res.append("\n\n"+displayDeathRow(reversed ? Game.Color.BLACK : Game.Color.WHITE)+"\n");
+		res.append("        "+(reversed ? whiten : blackn)+"\n");
+		res.append(writeColumnLabels(max, reversed)+"\n");
 		if (!reversed){
 			for (Board.Tile[] row : getBoardState()){
 				res.append(COLDIM+y+TERMCOL+" ");
@@ -152,6 +173,8 @@ public class Board {
 			}
 		}
 		res.append("\n"+writeColumnLabels(max, reversed));
+		res.append("        "+(reversed ? blackn : whiten)+"\n");
+		res.append(displayDeathRow(reversed ? Game.Color.WHITE : Game.Color.BLACK)+"\n\n");
 
 		return res.toString();
 	}
@@ -248,6 +271,8 @@ public class Board {
 	*	@return Whether the move is valid according to the relevant piece's move set 
 	*/
 	public boolean isValidMove(Move move){
+		boolean validMove = false;
+
 		Piece movingPiece = getTile(move.origin).getOccupator();
 
 		if (movingPiece == null || !getTile(move.destination).available(movingPiece.color) || move.origin.equals(move.destination))
@@ -267,63 +292,81 @@ public class Board {
 				move.PROMOTION = (move.destination.y == (movingPiece.color.equals(Game.Color.WHITE) ? 7 : 0));
 				if ((dy == 1 && dx == 0 && !enemy)
 					|| (movingPiece.moves.size()==0 && dy == 2 && dx == 0 && cardinalLineOfSightClear(move.origin, move.destination) && !enemy) 
-					|| (dy == 1 && (dy + dx == 0 || dy + dx == 2) && enemy))
-					return true;
+					|| (dy == 1 && (dy + dx == 0 || dy + dx == 2) && enemy)){
+					validMove = true;
+					break;
+				}
 				else if (!enemy &&
 							enpasse != null &&
 							getTile(move.origin.x+dx, move.origin.y).available(movingPiece.color) && 
 							enpasse.ofType(movingPiece.type) &&
 							enpasse.moves.size() == 1){
 					move.ENPASSE = true;
-					return true;
+					validMove = true;
+					break;
 				}
-				return false;
+				validMove = false;
+				break;
 			
 			case ROOK:
-				return (cardinalLineOfSightClear(move.origin, move.destination));
-			
+				validMove = (cardinalLineOfSightClear(move.origin, move.destination));
+				break;
+
 			case KNIGHT:
-				return (dx != 0 && dy != 0 && Math.abs(dx) + Math.abs(dy) == 3);
+				validMove = (dx != 0 && dy != 0 && Math.abs(dx) + Math.abs(dy) == 3);
+				break;
 			
 			case BISHOP:
-				return (diagonalLineOfSightClear(move.origin, move.destination));
+				validMove = (diagonalLineOfSightClear(move.origin, move.destination));
+				break;
 			
 			case QUEEN:
-				return (diagonalLineOfSightClear(move.origin, move.destination))
+				validMove = (diagonalLineOfSightClear(move.origin, move.destination))
 						^ (cardinalLineOfSightClear(move.origin, move.destination));
+				break;
 			
 			case KING:	
-				if (movingPiece.moves.size() == 0 && Math.abs(dx) == 2 && dy == 0){
-					if (cardinalLineOfSightClear(move.origin, new Location(move.origin.x+dx, move.origin.y))){ // only checks if line of sight is clear, still need to check if every square is uncheckable
-						if (dx > 0){
-							Piece castleRook = getTile(move.origin.x+3, move.origin.y).getOccupator();
-							if (castleRook != null && castleRook.moves.size()==0)
-								move.KCASTLE = true;
-						}
-						else {
-							Piece castleRook = getTile(move.origin.x-4, move.origin.y).getOccupator();
-							if (castleRook != null && castleRook.moves.size()==0)
-								move.QCASTLE = true;
-						}
-						return true;
+				if (movingPiece.moves.isEmpty() && Math.abs(dx) == 2 && dy == 0){
+					if (dx > 0){
+						Piece castleRook = getTile(move.origin.x+3, move.origin.y).getOccupator();
+						if (cardinalLineOfSightClear(move.origin, new Location(move.origin.x+3, move.origin.y)) &&
+						 	castleRook != null && castleRook.type.equals(Game.PieceType.ROOK) && castleRook.moves.isEmpty())
+							move.KCASTLE = true;
 					}
+					else {
+						Piece castleRook = getTile(move.origin.x-4, move.origin.y).getOccupator();
+						if (cardinalLineOfSightClear(move.origin, new Location(move.origin.x-4, move.origin.y)) &&
+							castleRook != null && castleRook.type.equals(Game.PieceType.ROOK) && castleRook.moves.isEmpty())
+							move.QCASTLE = true;
+					}
+					validMove = true;
+					break;
 				}
-				return (Math.abs(dx) <= 1 && Math.abs(dy) <= 1);
+				validMove = (Math.abs(dx) <= 1 && Math.abs(dy) <= 1);
+				break;
 		}
-		return false;
+
+
+		if (validMove && enemy){
+			Piece enemyPiece = getTile(move.destination).getOccupator();
+			move.materialValue = enemyPiece.value;
+			enemyPiece.attackingMove = move;
+		}
+
+		return validMove;
 	}
 
+
 	/**
-	*	Gets a list of all valid moves for all pieces of a given color
+	*	Computes a list of all valid moves for all pieces of a given color
 	* 
 	*	@param c The color to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> getValidMoves(Game.Color c){
+	public List<Move> calculateValidMoves(Game.Color color){
 		List<Move> moves = new ArrayList<>();
 		for (Tile t : getTileList()){
-            if (!t.available(c)){
-            	Piece p = t.getOccupator();
+            if (!t.available(color)){
             	for (int i = 0; i < 8; ++i){
             		for (int j = 0; j < 8; ++j){
             			Move m = new Move(t.getLocale(), new Location(i, j), this);
@@ -334,8 +377,23 @@ public class Board {
             	}
             }
 		}
-
 		return moves;
+	}
+
+	/**
+	*	Returns the list of valid moves for a given color if this method has been called before. 
+	*	Otherwise, it will generate the list and return it. 
+	* 
+	*	@param color The color to gather moves for
+	*	@return The list of moves
+	*/
+	public List<Move> getValidMoves(Game.Color color){
+
+		List<Move> valid = ((color.equals(Game.Color.BLACK) ? validBlackMoves : validWhiteMoves));
+
+		if (valid == null) valid = calculateValidMoves(color);
+
+		return valid;
 	}
 
 	/**
@@ -360,7 +418,7 @@ public class Board {
 	}
 
 	/**
-	*	Gets a list of all valid moves for all pieces of a given color
+	*	Computes a list of all legal moves for all pieces of a given color
 	* 
 	*	@param c The color to gather moves for
 	*	@return The list of moves
@@ -369,9 +427,12 @@ public class Board {
 		List<Move> validMoves = getValidMoves(c);
 		List<Move> legalMoves = new ArrayList<>();
 
-		for (Move m : validMoves)
+		for (Move m : validMoves){
 			if (!Board.playerHasCheck(performMove(m), Game.getOpposite(c)))
 				legalMoves.add(m);
+			else if (m.materialValue > 0)
+				getTile(m.destination).getOccupator().attackingMove = null;
+		}
 
 		return legalMoves;
 	}
@@ -387,10 +448,7 @@ public class Board {
 
 		List<Move> legal =  ((color.equals(Game.Color.BLACK) ? legalBlackMoves : legalWhiteMoves));
 
-		if (legal != null)
-			return legal;
-		
-		else legal = calculateLegalMoves(color);
+		if (legal == null) legal = calculateLegalMoves(color);
 
 		return legal;
 	}
@@ -406,30 +464,33 @@ public class Board {
 	}
 
 	/**
+	*	Populates both legal move lists
+	*	
+	*/
+	public void processLegal(){
+		getLegalMoves(Game.Color.WHITE);
+		getLegalMoves(Game.Color.BLACK);
+	}
+
+	/**
 	*	Returns the list of legal moves for a given player's opponent
 	* 
 	*	@param player The Opponent of the Player to gather moves for
 	*	@return The list of moves
 	*/
 	public List<Move> getOpponentLegalMoves(Player player){
-		return getLegalMoves(Game.getOpposite(player.color));
+		return getOpponentLegalMoves(player.color);
 	}
 
 	/**
-	*	Determines whether the king of a given color can move to a given location
-	*	
-	*	@param locale The location being calculated for
-	*	@param color The color of the king being calculated for
-	*	@return whether the king can move to the location
+	*	Returns the list of legal moves for a given color's opponent
+	*
+	*	@param color The color of the Opponent of the Player to gather moves for
+	*	@return The list of moves
 	*/
-	public boolean isValidMoveForKing(Game.Color color, Location locale){
-		for (Move m : getLegalMoves(color))
-			if (m.destination.equals(locale) && getTile(m.origin).getOccupator().type.equals(Game.PieceType.KING))
-				return true;
-		return false;
+	public List<Move> getOpponentLegalMoves(Game.Color color){
+		return getLegalMoves(Game.getOpposite(color));
 	}
-
-
 
 	/**
 	*	Performs a given move, as well as any additional actions associated with a
@@ -451,7 +512,10 @@ public class Board {
 			result.moveOccupator(new Location(move.origin.x-4, move.origin.y), new Location(move.origin.x-1, move.origin.y));
 		else if (move.PROMOTION)
 			result.getTile(move.destination).getOccupator().type = Game.PieceType.QUEEN;
-		
+
+		if (move.materialValue > 0)
+			result.addToDeathRow(this.getTile(move.destination).getOccupator());
+
 		return result;
 	}
 
@@ -463,6 +527,10 @@ public class Board {
 		getTile(a).setOccupator(null);
 	}
 
+	public void addToDeathRow(Piece p){
+		deathRow.add(p);
+	}
+
 	/**
 	*	Returns a String representation of the board, oriented so the current player is 
 	*	on the bottom, using the Game setting for unicode.
@@ -472,6 +540,10 @@ public class Board {
 	@Override
 	public String toString(){
 		return getBoardString();
+	}
+
+	public void print(Player one, Player two){
+		System.out.println(getBoardString(one, two));
 	}
 
 	public class Tile {
