@@ -6,7 +6,7 @@ import java.util.ArrayList;
 /**
 *	An object representing a replacement of one Tile in a Board object with another.
 */
-public class Move implements Comparable<Move>{
+public class Move{
     /**	Boolean flag for special move type.*/
 	public boolean ENPASSE, QCASTLE, KCASTLE, PROMOTION, CHECKMATE;
 

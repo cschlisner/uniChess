@@ -30,6 +30,12 @@ public class StrategyProcessorThread extends Thread {
 
     public void run(){
         runTime = System.currentTimeMillis();
+        bestMove= new double[AI_DEPTH];
+        worstMove= new double[AI_DEPTH];
+        for (int i = 0; i < AI_DEPTH; ++i){
+            worstMove[i] = 1000000;
+            bestMove[i] = -1000000;
+        }
 
         sm.unWeightedTreeAverages = new double[AI_DEPTH];
 
@@ -39,13 +45,15 @@ public class StrategyProcessorThread extends Thread {
         runTime = System.currentTimeMillis() - runTime;
     }
 
+    double[] bestMove;
+    double[] worstMove; 
     /**
     *   Returns all legal submoves of a move up to depth of max; populates given array with weighted average tactical val for each node depth.
     *   Weight applied is (1 / nodedepth) to account for loss in prediction accuracy over time. 
     *
     *   @return The tree of moves
     */
-        double worstMove=100000.0, bestMove=-1000000.0;
+
     public void getMoveTreeVal(SmartMove m, int max, int depth, double[] vals){
         
         if (depth < max){
@@ -55,8 +63,8 @@ public class StrategyProcessorThread extends Thread {
             List<Double> tactVals = new ArrayList<>();
 
             for (SmartMove sub : submoves){
-                if (sub.tacticalValue < worstMove) worstMove = sub.tacticalValue;
-                else if (sub.tacticalValue > bestMove) bestMove = sub.tacticalValue;
+                if (sub.tacticalValue < worstMove[depth]) worstMove[depth] = sub.tacticalValue;
+                else if (sub.tacticalValue > bestMove[depth]) bestMove[depth] = sub.tacticalValue;
 
                 // Only explore tree if the tactical value of this move has not been found on this depth
                 if (!tactVals.contains(sub.tacticalValue)) {
@@ -64,8 +72,9 @@ public class StrategyProcessorThread extends Thread {
                     getMoveTreeVal(sub, max, depth+1, vals);
                 }
             }
+
             treesize += submoves.size();
-            vals[depth] = worstMove + bestMove;
+            vals[depth] = worstMove[depth] + bestMove[depth];
         }   
     }
 
