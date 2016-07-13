@@ -82,7 +82,10 @@ public class Move{
     	else if (in.length() == 2)
     		in = "p"+in;
     	
-    	String[] tokens = in.split("");
+    	String[] tokens = new String[in.length()];
+		for (int i = 0; i < in.length(); ++i)
+			tokens[i] = String.valueOf(in.charAt(i));
+
 		String pieceSymbol = tokens[0];
 
 		int rank = -1, file = -1;

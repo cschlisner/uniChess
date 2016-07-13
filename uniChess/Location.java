@@ -5,7 +5,7 @@ package uniChess;
 *	Board, as well as parsing algebraic locations to integer format. 
 */
 public class Location {
-	int x, y;
+	public int x, y;
 
 	public Location(int x, int y){
 		this.x = x;

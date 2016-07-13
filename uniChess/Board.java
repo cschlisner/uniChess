@@ -107,8 +107,6 @@ public class Board {
 		return state;
 	}
 
-	private String COLDIM = "\033[2m", INVCOL="\033[7m", TERMCOL = "\033[0m";
-
 	private String displayDeathRow(Game.Color color){
 		StringBuilder res = new StringBuilder();
 		res.append("   ");
@@ -122,11 +120,11 @@ public class Board {
 		StringBuilder res = new StringBuilder();
 		res.append(" ");
 		for (int x = 0; x<9; ++x){
-			if (x>0) res.append(COLDIM+(" ABCDEFGH".charAt((reversed)?9-x:x)));
+			if (x>0) res.append((" ABCDEFGH".charAt((reversed)?9-x:x)));
 			for (int k=0;k<(max-1);++k)	
 				res.append(" ");
 		}
-		res.append(TERMCOL+"\n");
+		res.append("\n");
 		return res.toString();
 	}
 
@@ -153,13 +151,13 @@ public class Board {
 		res.append(writeColumnLabels(max, reversed)+"\n");
 		if (!reversed){
 			for (Board.Tile[] row : getBoardState()){
-				res.append(COLDIM+y+TERMCOL+" ");
+				res.append(y+" ");
 				for (Board.Tile el : row){
 					res.append(el);
 					for (int k=0;k<((max-String.valueOf(el).length()));++k)	
 						res.append("  ");
 				}
-				res.append("  "+COLDIM+(y--)+TERMCOL+"\n");
+				res.append("  "+(y--)+"\n");
 			}
 		} else {
 			for (int i = getBoardState().length-1; i >= 0; --i){
@@ -169,7 +167,7 @@ public class Board {
 					for (int k=0;k<((max-String.valueOf(getBoardState()[i][j]).length()));++k)	
 						res.append(" ");
 				}
-				res.append(" "+COLDIM+(y-i)+TERMCOL+"\n");
+				res.append(" "+(y-i)+"\n");
 			}
 		}
 		res.append("\n"+writeColumnLabels(max, reversed));
@@ -549,7 +547,7 @@ public class Board {
 	public class Tile {
 		private Piece occupator = null;
 		private Location locale;
-		private Game.Color color;
+		public Game.Color color;
 
 		public Tile(Location loc){
 			locale = loc;
