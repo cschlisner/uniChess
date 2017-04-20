@@ -1,4 +1,4 @@
-###Detailed information can be found in the [api docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
+### Detailed information can be found in the [api docs](https://cschlisner.github.io/uniChess/apidocs/index.html)
 
 <h1>
 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
