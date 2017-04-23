@@ -63,15 +63,17 @@ public class Board {
            getTile(i, ((d>0)?org.y+1:org.y-1)).setOccupator(new Piece(color, Game.PieceType.PAWN));
     }
 
+    protected List<Tile> tileList = new ArrayList<>();
     /**
     *	@return A list of this Board's Tile objects 
     */
     public List<Tile> getTileList(){
-    	List<Tile> res = new ArrayList<>();
-    	for (int i = 0; i < 8; ++i)
-    		for (int j = 0; j < 8; ++j)
-    			res.add(state[i][j]);
-    	return res;
+        if (tileList.isEmpty()) {
+            for (int i = 0; i < 8; ++i)
+                for (int j = 0; j < 8; ++j)
+                    tileList.add(state[i][j]);
+        }
+        return tileList;
     }
 
     /** 
@@ -354,11 +356,10 @@ public class Board {
 		return validMove;
 	}
 
-
 	/**
 	*	Computes a list of all valid moves for all pieces of a given color
 	* 
-	*	@param c The color to gather moves for
+	*	@param color The color to gather moves for
 	*	@return The list of moves
 	*/
 	public List<Move> calculateValidMoves(Game.Color color){
@@ -386,12 +387,12 @@ public class Board {
 	*	@return The list of moves
 	*/
 	public List<Move> getValidMoves(Game.Color color){
-
-		List<Move> valid = ((color.equals(Game.Color.BLACK) ? validBlackMoves : validWhiteMoves));
-
-		if (valid == null) valid = calculateValidMoves(color);
-
-		return valid;
+		if (color.equals(Game.Color.BLACK)){
+			if (validBlackMoves == null) validBlackMoves = calculateValidMoves(color);
+			return validBlackMoves;
+		}
+		if (validWhiteMoves == null) validWhiteMoves = calculateValidMoves(color);
+		return validWhiteMoves;
 	}
 
 	/**
@@ -426,10 +427,12 @@ public class Board {
 		List<Move> legalMoves = new ArrayList<>();
 
 		for (Move m : validMoves){
-			if (!Board.playerHasCheck(performMove(m), Game.getOpposite(c)))
+			if (!Board.playerHasCheck(performMove(m), Game.getOpposite(c))) {
 				legalMoves.add(m);
-			else if (m.materialValue > 0)
+			}
+			else if (m.materialValue > 0) {
 				getTile(m.destination).getOccupator().attackingMove = null;
+			}
 		}
 
 		return legalMoves;
@@ -443,12 +446,12 @@ public class Board {
 	*	@return The list of moves
 	*/
 	public List<Move> getLegalMoves(Game.Color color){
-
-		List<Move> legal =  ((color.equals(Game.Color.BLACK) ? legalBlackMoves : legalWhiteMoves));
-
-		if (legal == null) legal = calculateLegalMoves(color);
-
-		return legal;
+		if (color.equals(Game.Color.BLACK)){
+			if (legalBlackMoves == null) legalBlackMoves = calculateLegalMoves(color);
+			return legalBlackMoves;
+		}
+		if (legalWhiteMoves == null) legalWhiteMoves = calculateLegalMoves(color);
+		return legalWhiteMoves;
 	}
 
 	/**
