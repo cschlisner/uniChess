@@ -1,52 +1,79 @@
 package uniChess;
 
-import java.util.List;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
 *	An object for creating, maintaining, and communicating with a chess game.
 *
 */
-public class Game {
+public class Game implements Serializable {
 
 	/** Type that the Game object will return on game advancement */
 	public enum GameEvent {OK, AMBIGUOUS, INVALID, ILLEGAL, CHECK, CHECKMATE, STALEMATE, DRAW}
 	
 	/** Type of game pieces. */
-	public enum PieceType {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING}
-	
-	/** Colors */
-	public enum Color {WHITE, BLACK}
-	
+
 	/** Enables unicode output in string representations. */
 	public static boolean unicode = true;
 
 	/** Restricts unicode characters to filled in type. */
 	public static boolean useDarkChars = false;
-	
+
+	/** Outputs GameException stacktrace to stdout. */
+	public static boolean logging = true;
+
 	private boolean whiteMove = true;
+
+	/** Game Identifier */
+	public String ID;
 
 	private String gameString = "";
 
 	private List<Board> boards = new ArrayList<>();
 
 	private Player white, black;
-	
+
+	private Move lastMove;
+
 	/** 
 	*	Creates a new Game between the supplied players starting from the gamestate
 	*	supplied through the gameString. This allows a game to be continued from 
 	*	a specific state. (See {@link #getGameString() getGameString} method).
-	*
+ 	*
+	*	Note: this will not check the legality of these moves. If an invalid move
+	*	is supplied in the gamestring then it will be made regardless. If a parsing error
+ 	*	occurs, the game will stop at the move previous to the inparsable move.
+ 	*
 	*	@param player1 The first player
 	*	@param player2 The second player
 	*	@param gameString The series of moves to be performed
 	*	before the game starts.
 	*/
 	public Game(Player player1, Player player2, String gameString){
-		this(player1, player2);
-		
-		for (String move : gameString.split(","))
-			advance(move);
+		white = (player1.color == Color.WHITE) ? player1 : player2;
+		black = (player1.color == Color.WHITE) ? player2 : player1;
+		white.registerGame(this);
+		black.registerGame(this);
+
+		boards.add(new Board());
+
+
+		for (String in : gameString.split(",")){
+			Move move;
+			try {
+				move = Move.parseMove(getCurrentBoard(), getCurrentPlayer().color, in);
+				lastMove = move;
+			} catch (Exception e){
+				return;
+			}
+			boards.add(move.getSimulation());
+
+			whiteMove = !whiteMove;
+
+			this.gameString += move.getANString()+",";
+		}
 	}
 	
 	/** 
@@ -57,16 +84,12 @@ public class Game {
 	*	@param player2 The second player
 	*/
 	public Game(Player player1, Player player2){
-		white = (player1.color.equals(Color.WHITE) ? player1 : player2);
-		black = (player1.color.equals(Color.WHITE) ? player2 : player1); 
-		
-		if (white instanceof Chesster)
-			((Chesster)white).registerGame(this);
-		if (black instanceof Chesster)
-			((Chesster)black).registerGame(this);
+		white = (player1.color == Color.WHITE) ? player1 : player2;
+		black = (player1.color == Color.WHITE) ? player2 : player1;
+		white.registerGame(this);
+		black.registerGame(this);
 
 		boards.add(new Board());
-		getCurrentBoard().processLegal();
 	}
 
 	/**
@@ -132,18 +155,49 @@ public class Game {
 	*	@param color The color to get the player for
 	*	@return The player controlling the given color.
 	*/
-	public Player getPlayer(Color color){
-		return color.equals(Color.BLACK) ? black : white;
+	public Player getPlayer(int color){
+		return (color == Color.BLACK) ? black : white;
 	}
 
 	/**
-	*	Returns the opposite of a given color.
-	*
-	*	@param c The opposite of the desired color
-	*	@return The opposite of the supplied color
-	*/
-	public static Color getOpposite(Color c){
-		return (c.equals(Color.BLACK) ? Color.WHITE : Color.BLACK);
+	 * Returns the last move made in the game
+	 * @return
+	 */
+	public Move getLastMove(){
+		return lastMove;
+	}
+
+	/**
+	 * Converts single character representations of pieces to unicode representation.
+	 * lowercase is mapped to white pieces and uppercase is mapped to black pieces.
+	 * i.e.
+	 * "p" -> ♙
+	 * "Q" -> ♛
+	 * @param p letter to convert
+	 * @return unicode representation of p, null if character is not one of [p,q,r,n,b,k]
+	 */
+	public static String getUnicode(char p){
+		int[] unicodeChars;
+		if (Character.isUpperCase(p))
+			unicodeChars = new int[]{9823,9820,9822,9821,9819,9818};
+		else unicodeChars = new int[]{9817,9814,9816,9815,9813,9812};
+
+		switch (Character.toLowerCase(p)){
+			case 'p':
+				return new String(Character.toChars(unicodeChars[0]));
+			case 'r':
+				return new String(Character.toChars(unicodeChars[1]));
+			case 'n':
+				return new String(Character.toChars(unicodeChars[2]));
+			case 'b':
+				return new String(Character.toChars(unicodeChars[3]));
+			case 'q':
+				return new String(Character.toChars(unicodeChars[4]));
+			case 'k':
+				return new String(Character.toChars(unicodeChars[5]));
+			default:
+				return null;
+		}
 	}
 
 	/**
@@ -168,17 +222,19 @@ public class Game {
 	*	@return The player who moved last.
 	*/
 	public GameEvent advance(String in){
+		Move move;
 		try {
-
-			if (white.draw && black.draw)
+			if (white.draw && black.draw) {
 				return GameEvent.DRAW;
+			}
 
-			Move move = Move.parseMove(getCurrentBoard(), getCurrentPlayer().color, in);
-			
-			List<Move> legal = getCurrentBoard().getLegalMoves(getCurrentPlayer());
-			
-			if (!legal.contains(move))
-				return GameEvent.ILLEGAL;
+			move = Move.parseMove(getCurrentBoard(), getCurrentPlayer().color, in);
+
+//			Board cb = getCurrentBoard();
+//			List<Move> legal = cb.getLegalMoves(getCurrentPlayer());
+//
+//            if (!legal.contains(move))
+//				return GameEvent.ILLEGAL;
 
 			boards.add(move.getSimulation());
 			getCurrentBoard().processLegal();
@@ -187,18 +243,19 @@ public class Game {
 
 			gameString += move.getANString()+",";
 
-			if (Board.playerHasCheck(getCurrentBoard(), getDormantPlayer()) && getCurrentBoard().getLegalMoves(getCurrentPlayer()).isEmpty())
+			lastMove = move;
+
+			if (getCurrentBoard().playerHasCheck(getDormantPlayer()) && getCurrentBoard().getLegalMoves(getCurrentPlayer()).isEmpty())
 				return GameEvent.CHECKMATE;
 
 			else if (getCurrentBoard().getLegalMoves(getCurrentPlayer()).isEmpty()) // This is a stalemate, which results in Draw
 				return GameEvent.DRAW;
 
-			else if (Board.playerHasCheck(getCurrentBoard(), getDormantPlayer()))
+			else if (getCurrentBoard().playerHasCheck(getDormantPlayer()))
 				return GameEvent.CHECK;
-
-
 		} catch (GameException ge){
-				
+				if (logging)
+					ge.printStackTrace();
 				switch (ge.getType()) {
 					
 					case GameException.INVALID_MOVE:
@@ -209,7 +266,6 @@ public class Game {
 
 				}
 		}
-		
-		return GameEvent.OK;	
+		return GameEvent.OK;
 	}
 }

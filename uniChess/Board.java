@@ -1,7 +1,10 @@
 package uniChess;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 /**
 *	An object holding a boardstate. Each Board holds an array of 64 Tiles, any of which can be occupied by a Piece.
@@ -9,10 +12,23 @@ import java.util.ArrayList;
 *	This means that all information about this board (including legal moves, piece locations, etc) is in an artificial static state.
 *	<p> 
 *	Since all information about the board will never change, two lists of legal moves for each player is generated on creation. 
-*	These lists will be publicly acessable and unchanging so that no additional calculation will need to be done for the board. 
+*	These lists will be publicly accessible and unchanging so that no additional calculations will need to be done for the board.
 */
 public class Board {
-	private Tile[][] state = new Tile[8][8];
+
+	/** Board iteration, generated from previous board - same as game move count **/
+	private int iteration;
+
+	private int blackMaterial=0;
+	private int whiteMaterial=0;
+
+    /*
+        state[0][0] = upper-left tile = A8 = (0,7)
+        state[7][7] = lower-right tile = H1 = (7,0)
+     */
+	private byte[][] state = new byte[8][8];
+
+	private List<Location> enpassentablePawns = new ArrayList<>();
 
 	private List<Move> legalWhiteMoves;
 	private List<Move> legalBlackMoves;
@@ -20,54 +36,178 @@ public class Board {
 	private List<Move> validWhiteMoves;
 	private List<Move> validBlackMoves;
 
-	private List<Piece> deathRow = new ArrayList<>();
+	private byte[] deathRow = new byte[0];
+
+    public HashSet<Location> hasMoved = new HashSet<>();
 
 
 	/** Sets the orientation of the string representation of the board. */
 	public static boolean reversed;
 
+	/**
+	 * Creates a copy of a given board
+	 * @param other Board to copy
+	 */
 	public Board(Board other){
-		for (int y = 0; y < 8; ++y)
-			for (int x = 0; x < 8; ++x)
-				state[y][x] = new Tile(other.getTile(x, 7-y));
-		this.deathRow.addAll(other.deathRow);
+		this(other, null);
+	}
+
+	/**
+	 * Creates the Board resulting from a given move on a given parent board
+	 * @param parent Parent Board
+	 * @param move Move made
+	 */
+	public Board(Board parent, Move move){
+		long t0 = System.currentTimeMillis();
+
+		iteration = parent.iteration + (move==null ? 0 : 1);
+
+		for (int y = 0; y < 8; ++y) {
+			for (int x = 0; x < 8; ++x) {
+				state[y][x] = parent.state[y][x];
+				byte piece = state[y][x];
+
+				if (piece != Piece.NONE){
+					if (Piece.isw(piece))
+						whiteMaterial += Piece.value(piece);
+					else blackMaterial += Piece.value(piece);
+				}
+			}
+		}
+		this.deathRow = Arrays.copyOf(parent.deathRow, parent.deathRow.length);
+
+		if (move != null){
+
+			// make the move
+			this.moveOccupator(move.origin, move.destination);
+
+			// set passable status (able to be en-passanted) of pawn if it's the pawns first move
+			if (Piece.type(move.piece) == Piece.Type.PAWN){
+				int dx = move.destination.x - move.origin.x;
+				int dy = Piece.dir(move.piece) * (move.destination.y - move.origin.y);
+				if (dy == 2 && dx == 0)
+				    enpassentablePawns.add(move.destination);
+			}
+			if (move.ENPASSE) {
+				addToDeathRow(this.getTile(move.destination.x, move.origin.y));
+				setTile(move.destination.x, move.origin.y, Piece.NONE);
+			}
+			else if (move.KCASTLE) {
+			    try {
+                    moveOccupator(new Location(move.origin.x + 3, move.origin.y), new Location(move.origin.x + 1, move.origin.y));
+                } catch (Exception e){
+                    System.out.println(parent);
+                    System.out.println(move);
+                    System.out.println(move.origin);
+                    System.out.println(move.destination);
+                    Iterator<Location> i = parent.hasMoved.iterator();
+                    while (i.hasNext())
+                        System.out.print(i.next());
+                    System.out.println("");
+                    throw e;
+                }
+			}
+			else if (move.QCASTLE) {
+				moveOccupator(new Location(move.origin.x-4, move.origin.y), new Location(move.origin.x-1, move.origin.y));
+			}
+			else if (move.PROMOTION) {
+				setTile(move.destination, Piece.isw(move.piece)?Piece.QUEEN:Piece.blk(Piece.QUEEN));
+			}
+
+			if (move.materialValue > 0) {
+				addToDeathRow(parent.getTile(move.destination));
+			}
+		}
+		else if (iteration>0){
+			// these values have already been calculated and haven't changed
+			if (iteration%2==0)
+				this.legalWhiteMoves = parent.getLegalMoves(Color.WHITE);
+			else this.legalBlackMoves = parent.getLegalMoves(Color.BLACK);
+		}
+
+        this.hasMoved.addAll(parent.hasMoved);
+        this.hasMoved.add(move.origin);
+
 	}
 
 	public Board(){
-		for (int y = 0; y < 8; ++y)
-			for (int x = 0; x < 8; ++x)
-				state[y][x] = new Tile(new Location(x, 7-y));
+		iteration = 0;
 
-		createMaterial(Game.Color.BLACK);
-		createMaterial(Game.Color.WHITE);
+		createMaterial(Color.BLACK);
+		createMaterial(Color.WHITE);
 	}
 
-	private void createMaterial(Game.Color color){
-   		int d = (color.equals(Game.Color.BLACK))?-1:1;
+	public Board(String layout) throws Exception{
+		if (layout.length() != 64)
+			throw new Exception("NO!!!!!!!!!!");
+
+		char[] allowed = {'.','p','b','k','n','r','q'};
+
+		for (int i = 0; i < 64; ++i) {
+
+			int y = i / 8, x = i <= 7 ? i : i - 8 * y;
+
+			boolean inset = false;
+			for (char a : allowed){
+				if (Character.toLowerCase(layout.charAt(i)) == allowed[a]) {
+					inset = true;
+					break;
+				}
+			}
+			if (!inset)
+				throw new Exception("NO!!!!!!!!!!!!!!");
+
+			if (layout.charAt(i) != '.')
+				state[y][x] = Piece.synth(layout.charAt(i));
+		}
+	}
+
+	public int getIteration(){
+		return iteration;
+	}
+
+	public String getLayout(){
+		String boardlayout = "";
+		for (int i = 0; i < 64; ++i){
+			int y = i/8, x = i <=7 ? i : i - 8 * y;
+			if (getTile(x,y) != Piece.NONE)
+				boardlayout += Piece.symbol(getTile(x,y), false);
+			else boardlayout += ".";
+		}
+		return boardlayout;
+	}
+
+	private void createMaterial(int color){
+   		int d = color;
         Location org = (d>0)?new Location(0,0):new Location(7,7);
 
-        getTile(org.x+(d*0), org.y).setOccupator(new Piece(color, Game.PieceType.ROOK));
-        getTile(org.x+(d*7), org.y).setOccupator(new Piece(color, Game.PieceType.ROOK));
+        setTile(org.x+(d*0), org.y, d>0?Piece.ROOK:Piece.blk(Piece.ROOK));
+        setTile(org.x+(d*7), org.y, d>0?Piece.ROOK:Piece.blk(Piece.ROOK));
 
-        getTile(org.x+(d*1), org.y).setOccupator(new Piece(color, Game.PieceType.KNIGHT));
-        getTile(org.x+(d*6), org.y).setOccupator(new Piece(color, Game.PieceType.KNIGHT));
+        setTile(org.x+(d*1), org.y, d>0?Piece.KNIGHT:Piece.blk(Piece.KNIGHT));
+        setTile(org.x+(d*6), org.y, d>0?Piece.KNIGHT:Piece.blk(Piece.KNIGHT));
 
-       getTile(org.x+(d*2), org.y).setOccupator(new Piece(color, Game.PieceType.BISHOP));
-       getTile(org.x+(d*5), org.y).setOccupator(new Piece(color, Game.PieceType.BISHOP));
+        setTile(org.x+(d*2), org.y, d>0?Piece.BISHOP:Piece.blk(Piece.BISHOP));
+        setTile(org.x+(d*5), org.y, d>0?Piece.BISHOP:Piece.blk(Piece.BISHOP));
 
         // King and queen are symmetrical
-        getTile(org.x+(d*((d>0)?4:3)), org.y).setOccupator(new Piece(color, Game.PieceType.KING));
-        getTile(org.x+(d*((d>0)?3:4)), org.y).setOccupator(new Piece(color, Game.PieceType.QUEEN));
+        setTile(org.x+(d*((d>0)?4:3)), org.y, d>0?Piece.KING:Piece.blk(Piece.KING));
+        setTile(org.x+(d*((d>0)?3:4)), org.y, d>0?Piece.QUEEN:Piece.blk(Piece.QUEEN));
 
         for (int i = 0; i < 8; ++i)
-           getTile(i, ((d>0)?org.y+1:org.y-1)).setOccupator(new Piece(color, Game.PieceType.PAWN));
+            setTile(i, ((d>0)?org.y+1:org.y-1), d>0?Piece.PAWN:Piece.blk(Piece.PAWN));
     }
 
-    protected List<Tile> tileList = new ArrayList<>();
+
+    public int getMaterialCount(int color){
+		return (color == Color.BLACK) ? blackMaterial : whiteMaterial;
+	}
+
+    protected List<Byte> tileList = new ArrayList<>();
     /**
     *	@return A list of this Board's Tile objects 
     */
-    public List<Tile> getTileList(){
+    public List<Byte> getTileList(){
         if (tileList.isEmpty()) {
             for (int i = 0; i < 8; ++i)
                 for (int j = 0; j < 8; ++j)
@@ -83,7 +223,7 @@ public class Board {
     *	@param l The location of the tile to return
     *	@return The tile at the specified location
     */
-    public Tile getTile(Location l){
+    public byte getTile(Location l){
 		return getTile(l.x, l.y);
 	}
 	
@@ -95,9 +235,18 @@ public class Board {
     *	@param y y-coordinate of the specified Tile 
     *	@return The Tile at the specified location
     */
-	public Tile getTile(int x, int y){
+	public byte getTile(int x, int y){
 		return state[7-y][x];
 	}
+
+	private void setTile(Location l, byte p){
+	    setTile(l.x, l.y, p);
+    }
+
+    private void setTile(int x, int y, byte p){
+	    state[7-y][x] = p;
+    }
+
 
 	/** 
     *	Returns a two-dimensional array of Tile objects wherein array[0][0] is the top left corner
@@ -105,16 +254,21 @@ public class Board {
     *	
     *	@return The array of Tile objects
     */
-	public Tile[][] getBoardState(){
+	public byte[][] getBoardState(){
 		return state;
 	}
 
-	private String displayDeathRow(Game.Color color){
+	/**
+	 * Get string of captured pieces of a certain color
+	 * @param color color of captured pieces
+	 * @return string of captured pieces in order of capture
+	 */
+	public String displayDeathRow(int color){
 		StringBuilder res = new StringBuilder();
 		res.append("   ");
-		for (Piece p : deathRow)
-			if (p.color.equals(color))
-				res.append(p + " ");
+		for (byte p : deathRow)
+			if (Piece.color(p) == color)
+				res.append(Piece.symbol(p) + " ");
 		return res.toString();
 	}
 
@@ -134,10 +288,10 @@ public class Board {
 		int max=0;
 		for (T[] row : arr)
 			for (T el : row)
-		 max = (String.valueOf(el).length() > max)?String.valueOf(el).length():max;
+		        max = (String.valueOf(el).length() > max)?String.valueOf(el).length():max;
 		return max;
     }
-	private String getBoardString(){
+	public String getBoardString(){
 		return getBoardString("","");
 	}
 	private String getBoardString(Player whiten, Player blackn){
@@ -146,35 +300,38 @@ public class Board {
 	private String getBoardString(String whiten, String blackn){
 		StringBuilder res = new StringBuilder();
 		
-		int max = findMaxLen(getBoardState());
-		int y = 8;
-		res.append("\n\n"+displayDeathRow(reversed ? Game.Color.BLACK : Game.Color.WHITE)+"\n");
+//		int max = findMaxLen(getBoardState());
+        int max = 2;
+		res.append("\n\n"+displayDeathRow(reversed ? Color.BLACK : Color.WHITE)+"\n");
 		res.append("        "+(reversed ? whiten : blackn)+"\n");
 		res.append(writeColumnLabels(max, reversed)+"\n");
-		if (!reversed){
-			for (Board.Tile[] row : getBoardState()){
-				res.append(y+" ");
-				for (Board.Tile el : row){
-					res.append(el);
-					for (int k=0;k<((max-String.valueOf(el).length()));++k)	
-						res.append("  ");
+		//if (!reversed){
+			for (int y = 0; y < 8; ++y){
+				res.append((8-y)+"  ");
+				for (int x = 0; x < 8; ++x){
+					if (state[y][x] != Piece.NONE)
+						res.append(Piece.symbol(state[y][x])+"\u2007");
+					else if ((x+y)%2==0)
+						res.append(Game.unicode?"\u25AC ":"-");
+					else res.append("\u25A2 ");
+					res.append("");
 				}
-				res.append("  "+(y--)+"\n");
+				res.append("  "+(8-y)+"\n");
 			}
-		} else {
-			for (int i = getBoardState().length-1; i >= 0; --i){
-				res.append(y-i);
-				for (int j = getBoardState()[0].length-1; j >= 0; --j){
-					res.append(getBoardState()[i][j]);
-					for (int k=0;k<((max-String.valueOf(getBoardState()[i][j]).length()));++k)	
-						res.append(" ");
-				}
-				res.append(" "+(y-i)+"\n");
-			}
-		}
+		//} else {
+//			for (int i = getBoardState().length-1; i >= 0; --i){
+//				res.append(y-i);
+//				for (int j = getBoardState()[0].length-1; j >= 0; --j){
+//					res.append(getBoardState()[i][j]);
+//					for (int k=0;k<((max-String.valueOf(Piece.symbol(state[i][j])).length()));++k)
+//						res.append(" ");
+//				}
+//				res.append(" "+(y-i)+"\n");
+//			}
+//		}
 		res.append("\n"+writeColumnLabels(max, reversed));
 		res.append("        "+(reversed ? blackn : whiten)+"\n");
-		res.append(displayDeathRow(reversed ? Game.Color.WHITE : Game.Color.BLACK)+"\n\n");
+		res.append(displayDeathRow(reversed ? Color.WHITE : Color.BLACK)+"\n\n");
 
 		return res.toString();
 	}
@@ -200,7 +357,8 @@ public class Board {
 
 		int dir = (((v)?b.y:b.x) < ((v)?a.y:a.x))?1:-1;
 		for (int i = ((v)?b.y:b.x)+dir; i != ((v)?a.y:a.x); i += dir){
-			if (getTile((v)?a.x:i, (v)?i:a.y).occupator != null)
+			byte t = getTile((v)?a.x:i, (v)?i:a.y);
+			if (t != Piece.NONE)
 				return false;
 		}
 		return true;
@@ -228,7 +386,7 @@ public class Board {
 			return false;
 
 		for (int x = b.x+xDir, y = b.y+yDir; x != a.x; x+=xDir, y+=yDir){
-			if (getTile(x, y).occupator != null)
+			if (getTile(x, y) != Piece.NONE)
 				return false;
 		}
 		return true;
@@ -242,14 +400,19 @@ public class Board {
 	*	@param locale The location to calculate the distance for
 	*	@return The distance from the given location to the king of the given color
 	*/
-	public double getDistanceFromKing(Game.Color color, Location locale){
+	public double getDistanceFromKing(int color, Location locale){
 		Location kingLoc = null;
-		for (Tile t : getTileList()){
-			if (t.getOccupator()!=null && t.getOccupator().type.equals(Game.PieceType.KING) && t.getOccupator().color.equals(color)){
-				kingLoc = t.getLocale();
-				break;
-			}
-		}
+
+		stateloop:
+		for (int y = 0; y < 8; ++y){
+		    for (int x = 0; x < 8; ++x){
+		        byte t = state[y][x];
+                if (t!=Piece.NONE && Piece.type(t) == Piece.Type.KING && Piece.color(t) == color){
+                    kingLoc = Location.fromState(x,y);
+                    break stateloop;
+                }
+            }
+        }
 
 		return getDistanceFromLocation(locale, kingLoc);
 	}	
@@ -273,34 +436,35 @@ public class Board {
 	public boolean isValidMove(Move move){
 		boolean validMove = false;
 
-		Piece movingPiece = getTile(move.origin).getOccupator();
+		if (!move.destination.onBoard() || !move.origin.onBoard())
+			return false;
 
-		if (movingPiece == null || !getTile(move.destination).available(movingPiece.color) || move.origin.equals(move.destination))
+		if (move.piece == Piece.NONE || !available(move.destination, Piece.color(move.piece)) || move.origin.equals(move.destination))
 			return false;
 		
-		int direction = movingPiece.color.equals(Game.Color.WHITE) ? 1 : -1;
+		int direction = Piece.dir(move.piece);
 
 		// delta x and y
 		int dx = move.destination.x - move.origin.x;
 		int dy = direction * (move.destination.y - move.origin.y);
 
-		boolean enemy = getTile(move.destination).getOccupator() != null;
+		boolean enemy = getTile(move.destination) != Piece.NONE;
 		
-		switch (movingPiece.type){
+		switch (Piece.type(move.piece)){
 			case PAWN:
-				Piece enpasse = (dy == 1 && (dy + dx == 0 || dy + dx == 2)) ? getTile(move.origin.x+dx, move.origin.y).getOccupator() : null;
-				move.PROMOTION = (move.destination.y == (movingPiece.color.equals(Game.Color.WHITE) ? 7 : 0));
+				byte enpasse = (dy == 1 && (dy + dx == 0 || dy + dx == 2)) ? getTile(move.origin.x+dx, move.origin.y) : Piece.NONE;
+                Location enpsseloc = (enpasse != Piece.NONE) ? new Location(move.origin.x+dx, move.origin.y) : null;
+				move.PROMOTION = (move.destination.y == (Piece.isw(move.piece) ? 7 : 0));
 				if ((dy == 1 && dx == 0 && !enemy)
-					|| (movingPiece.moves.size()==0 && dy == 2 && dx == 0 && cardinalLineOfSightClear(move.origin, move.destination) && !enemy) 
+					|| (move.origin.y == (Piece.isw(move.piece) ? 1 : 6) && dy == 2 && dx == 0 && cardinalLineOfSightClear(move.origin, move.destination) && !enemy)
 					|| (dy == 1 && (dy + dx == 0 || dy + dx == 2) && enemy)){
 					validMove = true;
 					break;
 				}
 				else if (!enemy &&
-							enpasse != null &&
-							getTile(move.origin.x+dx, move.origin.y).available(movingPiece.color) && 
-							enpasse.ofType(movingPiece.type) &&
-							enpasse.moves.size() == 1){
+							enpasse != Piece.NONE &&
+							available(new Location(move.origin.x+dx, move.origin.y), Piece.color(move.piece)) &&
+							enpassentablePawns.contains(enpsseloc)){
 					move.ENPASSE = true;
 					validMove = true;
 					break;
@@ -326,35 +490,67 @@ public class Board {
 				break;
 			
 			case KING:	
-				if (movingPiece.moves.isEmpty() && Math.abs(dx) == 2 && dy == 0){
-					if (dx > 0){
-						Piece castleRook = getTile(move.origin.x+3, move.origin.y).getOccupator();
-						if (cardinalLineOfSightClear(move.origin, new Location(move.origin.x+3, move.origin.y)) &&
-						 	castleRook != null && castleRook.type.equals(Game.PieceType.ROOK) && castleRook.moves.isEmpty())
-							move.KCASTLE = true;
-					}
-					else {
-						Piece castleRook = getTile(move.origin.x-4, move.origin.y).getOccupator();
-						if (cardinalLineOfSightClear(move.origin, new Location(move.origin.x-4, move.origin.y)) &&
-							castleRook != null && castleRook.type.equals(Game.PieceType.ROOK) && castleRook.moves.isEmpty())
-							move.QCASTLE = true;
-					}
-					validMove = true;
-					break;
+				if (Math.abs(dx) == 2 && dy == 0){
+				    if (move.origin.equals(new Location(direction>0?0:7,4))) {
+                        move.KCASTLE = canCastleKingside(Piece.color(move.piece));
+                        move.QCASTLE = canCastleQueenside(Piece.color(move.piece));
+                        if (move.QCASTLE || move.KCASTLE) {
+                            validMove = true;
+                            break;
+                        }
+                    }
 				}
 				validMove = (Math.abs(dx) <= 1 && Math.abs(dy) <= 1);
 				break;
 		}
 
 
-		if (validMove && enemy){
-			Piece enemyPiece = getTile(move.destination).getOccupator();
-			move.materialValue = enemyPiece.value;
-			enemyPiece.attackingMove = move;
-		}
+		if (validMove && enemy)
+			move.materialValue = Piece.value(getTile(move.destination));
 
 		return validMove;
 	}
+
+	public boolean canCastleKingside(int c){
+	    Location kingStart = new Location(c==Color.WHITE?0:7,4);
+        Location rookStart = new Location(c==Color.WHITE?0:7, 7);
+
+        // neither the king nor the rook have moved
+        if (!hasMoved.contains(kingStart) && !hasMoved.contains(rookStart)) {
+
+            // check if the tiles in between the king and the rook (k.y, 5) and (k.y, 6) are covered by an enemy piece
+            for (Move m : getValidMoves(Color.opposite(c))) {
+                if (m.destination == new Location(5, kingStart.y) ||
+                        m.destination == new Location(6, kingStart.y))
+                    return false;
+            }
+
+            // line of sight between pieces is clear
+            return cardinalLineOfSightClear(kingStart, rookStart);
+        }
+        return false;
+    }
+
+    public boolean canCastleQueenside(int c){
+        Location rookStart = new Location(c==Color.WHITE?0:7, 0);
+        Location kingStart = new Location(c==Color.WHITE?0:7,4);
+
+        // neither the king nor the rook have moved
+        if (!hasMoved.contains(kingStart) && !hasMoved.contains(rookStart)) {
+
+            // check if the tiles in between the king and the rook are covered by an enemy piece
+            for (Move m : getValidMoves(Color.opposite(c))) {
+                if (m.destination == new Location(1,kingStart.y) ||
+                        m.destination == new Location(2, kingStart.y) ||
+                        m.destination == new Location(3, kingStart.y))
+                    return false;
+            }
+
+            // line of sight between pieces is clear
+            return cardinalLineOfSightClear(kingStart, rookStart);
+        }
+        return false;
+    }
 
 	/**
 	*	Computes a list of all valid moves for all pieces of a given color
@@ -362,20 +558,85 @@ public class Board {
 	*	@param color The color to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> calculateValidMoves(Game.Color color){
+	private List<Move> calculateValidMoves(int color){
 		List<Move> moves = new ArrayList<>();
-		for (Tile t : getTileList()){
-            if (!t.available(color)){
-            	for (int i = 0; i < 8; ++i){
-            		for (int j = 0; j < 8; ++j){
-            			Move m = new Move(t.getLocale(), new Location(i, j), this);
-            			if (isValidMove(m)){
-            				moves.add(m);
-            			}
-            		}
-            	}
+        for (int y = 0; y < 8; ++y) {
+            for (int x = 0; x < 8; ++x) {
+                Location ploc = new Location(x, y);
+                byte p = getTile(ploc);
+                if (!available(ploc, color)) {
+                    List<Move> m_list = new ArrayList<>();
+                    switch (Piece.type(p)) {
+                        case PAWN:
+                            m_list.add(new Move(ploc, new Location(ploc.x, ploc.y + (color * 2)), this));
+                            m_list.add(new Move(ploc, new Location(ploc.x, ploc.y + color), this));
+                            m_list.add(new Move(ploc, new Location(ploc.x + 1, ploc.y + color), this));
+                            m_list.add(new Move(ploc, new Location(ploc.x - 1, ploc.y + color), this));
+                            break;
+
+                        case ROOK:
+                            for (int i = 0; i < 8; ++i) {
+                                if (i != ploc.x)
+                                    m_list.add(new Move(ploc, new Location(i, ploc.y), this));
+                                if (i != ploc.y)
+                                    m_list.add(new Move(ploc, new Location(ploc.x, i), this));
+                            }
+                            break;
+
+                        case KNIGHT:
+                            int[][] pos = {
+                                    {2, 1},
+                                    {2, -1},
+                                    {-2, 1},
+                                    {-2, -1},
+                                    {1, 2},
+                                    {1, -2},
+                                    {-1, 2},
+                                    {-1, -2}
+                            };
+                            for (int[] ps : pos)
+                                m_list.add(new Move(ploc, new Location(ploc.x + ps[0], ploc.y + ps[1]), this));
+                            break;
+
+                        case BISHOP:
+                            for (int i = 1; i < 8; ++i) {
+                                m_list.add(new Move(ploc, new Location(ploc.x + i, ploc.y + i), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x + i, ploc.y - i), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x - i, ploc.y + i), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x - i, ploc.y - i), this));
+                            }
+                            break;
+
+                        case QUEEN:
+                            for (int i = 0, j = 1; i < 7; ++i, ++j) {
+                                if (i != ploc.x)
+                                    m_list.add(new Move(ploc, new Location(i, ploc.y), this));
+                                if (i != ploc.y) ;
+                                m_list.add(new Move(ploc, new Location(ploc.x, i), this));
+
+                                m_list.add(new Move(ploc, new Location(ploc.x + j, ploc.y + j), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x + j, ploc.y - j), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x - j, ploc.y + j), this));
+                                m_list.add(new Move(ploc, new Location(ploc.x - j, ploc.y - j), this));
+                            }
+                            break;
+
+                        case KING:
+                            for (int i = 0; i < 3; ++i)
+                                for (int j = 0; j < 3; ++j)
+                                    m_list.add(new Move(ploc, new Location(ploc.x - 1 + i, ploc.y + 1 - j), this));
+                            // potential castling moves
+                            m_list.add(new Move(ploc, new Location(ploc.x + 2, ploc.y), this));
+                            m_list.add(new Move(ploc, new Location(ploc.x - 2, ploc.y), this));
+                            break;
+                    }
+                    for (Move move : m_list) {
+                        if (isValidMove(move))
+                            moves.add(move);
+                    }
+                }
             }
-		}
+        }
 		return moves;
 	}
 
@@ -386,8 +647,8 @@ public class Board {
 	*	@param color The color to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> getValidMoves(Game.Color color){
-		if (color.equals(Game.Color.BLACK)){
+	private List<Move> getValidMoves(int color){
+		if (color == Color.BLACK){
 			if (validBlackMoves == null) validBlackMoves = calculateValidMoves(color);
 			return validBlackMoves;
 		}
@@ -396,24 +657,22 @@ public class Board {
 	}
 
 	/**
-	*	Determines whether a given player on a given board holds check.
+	*	Determines whether a given player holds check on this board
 	*	
-	*	@param board The board to check on 
 	*	@param c The color of player to check for
 	*	@return Whether the player has check 	
 	*/
-	public static boolean playerHasCheck(Board board, Game.Color c){
-		Piece p;
-		for (Move m : board.getValidMoves(c)){
-			p = board.getTile(m.destination).getOccupator();
-			if (p != null && p.ofType(Game.PieceType.KING))
+	public boolean playerHasCheck(int c){
+		byte p;
+		for (Move m : getValidMoves(c)){
+			p = getTile(m.destination);
+			if (p != Piece.NONE && Piece.type(p) == Piece.Type.KING)
 				return true;
 		}
 		return false;
 	}
-
-	public static boolean playerHasCheck(Board board, Player player){
-		return Board.playerHasCheck(board, player.color);
+	public boolean playerHasCheck(Player player){
+		return playerHasCheck(player.color);
 	}
 
 	/**
@@ -422,18 +681,16 @@ public class Board {
 	*	@param c The color to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> calculateLegalMoves(Game.Color c){
+	private List<Move> calculateLegalMoves(int c){
 		List<Move> validMoves = getValidMoves(c);
 		List<Move> legalMoves = new ArrayList<>();
-
+		//long t1 = System.currentTimeMillis();
 		for (Move m : validMoves){
-			if (!Board.playerHasCheck(performMove(m), Game.getOpposite(c))) {
+			if (!new Board(this, m).playerHasCheck(Color.opposite(c))) {
 				legalMoves.add(m);
 			}
-			else if (m.materialValue > 0) {
-				getTile(m.destination).getOccupator().attackingMove = null;
-			}
 		}
+		//System.out.println("Calculated legal in "+(System.currentTimeMillis() - t1)+"ms");
 
 		return legalMoves;
 	}
@@ -445,8 +702,9 @@ public class Board {
 	*	@param color The color to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> getLegalMoves(Game.Color color){
-		if (color.equals(Game.Color.BLACK)){
+	public List<Move> getLegalMoves(int color){
+		long t0 = System.currentTimeMillis();
+		if (color == Color.BLACK){
 			if (legalBlackMoves == null) legalBlackMoves = calculateLegalMoves(color);
 			return legalBlackMoves;
 		}
@@ -469,8 +727,7 @@ public class Board {
 	*	
 	*/
 	public void processLegal(){
-		getLegalMoves(Game.Color.WHITE);
-		getLegalMoves(Game.Color.BLACK);
+		getLegalMoves(iteration % 2 == 0 ? Color.WHITE : Color.BLACK);
 	}
 
 	/**
@@ -489,125 +746,44 @@ public class Board {
 	*	@param color The color of the Opponent of the Player to gather moves for
 	*	@return The list of moves
 	*/
-	public List<Move> getOpponentLegalMoves(Game.Color color){
-		return getLegalMoves(Game.getOpposite(color));
-	}
-
-	/**
-	*	Performs a given move, as well as any additional actions associated with a
-	*	special move type such as En Passent moves, Castling, and Pawn promotion. 
-	*	
-	*	@param move The move to perform
-	*	@return The new board resulting from the move
-	*/
-	public Board performMove(Move move){
-
-		Board result = new Board(this);
-
-		result.moveOccupator(move.origin, move.destination);
-		if (move.ENPASSE)
-			result.getTile(move.origin.x+(move.destination.x - move.origin.x), move.origin.y).setOccupator(null);
-		else if (move.KCASTLE)
-			result.moveOccupator(new Location(move.origin.x+3, move.origin.y), new Location(move.origin.x+1, move.origin.y));
-		else if (move.QCASTLE)
-			result.moveOccupator(new Location(move.origin.x-4, move.origin.y), new Location(move.origin.x-1, move.origin.y));
-		else if (move.PROMOTION)
-			result.getTile(move.destination).getOccupator().type = Game.PieceType.QUEEN;
-
-		if (move.materialValue > 0)
-			result.addToDeathRow(this.getTile(move.destination).getOccupator());
-
-		return result;
+	public List<Move> getOpponentLegalMoves(int color){
+		return getLegalMoves(Color.opposite(color));
 	}
 
 	private void moveOccupator(Location a, Location b){
-		getTile(b).setOccupator(getTile(a).getOccupator());
+		setTile(b, getTile(a));
 
-		getTile(a).getOccupator().moves.add(b);
-
-		getTile(a).setOccupator(null);
+		setTile(a, Piece.NONE);
 	}
 
-	public void addToDeathRow(Piece p){
-		deathRow.add(p);
+	public void addToDeathRow(byte p){
+		deathRow = Arrays.copyOf(deathRow, deathRow.length+1);
+        deathRow[deathRow.length-1] = p;
 	}
 
 	/**
-	*	Returns a String representation of the board, oriented so the current player is 
-	*	on the bottom, using the Game setting for unicode.
-	*	
-	*	@return The string representation of this board
-	*/
+	 * Returns the board iteration number, and which color has the move.
+	 * @return Board iteration
+	 */
 	@Override
 	public String toString(){
-		return getBoardString();
+		return "Board#"+String.valueOf(iteration)+":"+(iteration%2==0 ? "White":"Black")+" to move.";
 	}
 
 	public void print(Player one, Player two){
 		System.out.println(getBoardString(one, two));
 	}
 
-	public class Tile {
-		private Piece occupator = null;
-		private Location locale;
-		public Game.Color color;
-
-		public Tile(Location loc){
-			locale = loc;
-			occupator = null;
-			color = ((loc.x+loc.y)%2==0)?Game.Color.BLACK:Game.Color.WHITE;
-		}
-
-		public Tile(Tile org){
-			this.locale = org.locale;
-			if (org.occupator != null)
-				this.setOccupator(new Piece(org.occupator));
-			this.color = org.color;
-		}
-
-		/**
-		*	@return The location of this Tile
-		*/
-		public Location getLocale(){	
-			return locale;
-		}
-		
-		/**
-		*	@return The occupator of this Tile
-		*/
-		public Piece getOccupator(){
-			return occupator;
-		}
-
-		/**
-		*	Returns whether this tile contains no piece or contains a piece with a color
-		*	not equal to the given color. In other words, it returns whether or not a 
-		*	Piece of the given color can move to this Tile.
-		*	
-		*	@param c The color to use
-		*	@return Whether a piece of the given color can move to this tile.
-		*/
-		public boolean available(Game.Color c){
-			return (occupator == null || !occupator.color.equals(c));
-		}
-
-
-		/**
-		*	Sets the occupator of this Tile to a Piece
-		*
-		*	@param p The piece to use as the new occupator
-		*/
-		public void setOccupator(Piece p){
-			occupator = p;
-		}
-
-		/**
-		*	Returns a String representation of this Tile, including the 'color' of the tile and 
-		*	any occupants (using the Game setting for unicode).
-		*/
-		@Override
-		public String toString(){
-			return " "+(((occupator!=null)?occupator.getSymbol():(color.equals(Game.Color.BLACK))?"\u00B7":" "))+" ";
-		}
-	}
+    /**
+     *	Returns whether this tile contains no piece or contains a piece with a color
+     *	not equal to the given color. In other words, it returns whether or not a
+     *	Piece of the given color can move to this Tile.
+     *
+     *	@param c The color to use
+     *	@return Whether a piece of the given color can move to this tile.
+     */
+    public boolean available(Location l, int c){
+        byte t = getTile(l);
+        return (t == Piece.NONE || Piece.color(t) != c);
+    }
 }

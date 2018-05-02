@@ -7,21 +7,18 @@ class ConsoleChess {
 	public static void main(String[] args) {
 		Scanner in = new Scanner(System.in);
 
-		Player<String> p1 = new Chesster<>("EXP2", Game.Color.WHITE);
-		Player<String> p2 = new Chesster<>("Dynamic", Game.Color.BLACK);
+		Player<String> human = new Player<>("Human",Color.WHITE);
+		Player<String> c3p0 = new C3P0<>("C3P0",Color.BLACK);
 
-		((Chesster)p1).STRATEGY = Chesster.StrategyType.EXP2;
-		((Chesster)p1).dynamic = true;
-
-		Game chessGame = new Game(p1, p2);
+		Game chessGame = new Game(human, c3p0);
 		
-		chessGame.getCurrentBoard().print(p1,p2);
+		chessGame.getCurrentBoard().print(human,c3p0);
 		
 		while (true){
 
 				Player currentPlayer = chessGame.getCurrentPlayer();
 				//in.nextLine();
-				String input = ((currentPlayer instanceof Chesster) ? ((Chesster)currentPlayer).getMove().getANString() : in.nextLine()); 
+				String input = ((currentPlayer instanceof C3P0) ? (currentPlayer).getMove() : in.nextLine());
 				
 				if (input.equals("gametext")){
 					System.out.println(chessGame.getGameString());
@@ -30,7 +27,7 @@ class ConsoleChess {
 				
 				Game.GameEvent gameResponse = chessGame.advance(input);
 
-				chessGame.getCurrentBoard().print(p1,p2);
+				chessGame.getCurrentBoard().print(human,c3p0);
 				
 				switch(gameResponse){
 
@@ -61,7 +58,6 @@ class ConsoleChess {
 						break;
 
 				}
-
 		}
 	}
 
